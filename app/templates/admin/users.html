@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Users</h2>
+        <span class="badge bg-primary">Total: {{ users|length }}</span>
+    </div>
+
+    <!-- Search and Filter Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-search"></i> Search & Filter Users</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('admin.users') }}" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           placeholder="Name, Email, NIN, Phone..." value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="role" class="form-label">Role</label>
+                    <select class="form-control" id="role" name="role">
+                        <option value="">All Roles</option>
+                        <option value="payee" {% if request.args.get('role') == 'payee' %}selected{% endif %}>Payee</option>
+                        <option value="enforcer" {% if request.args.get('role') == 'enforcer' %}selected{% endif %}>Enforcer</option>
+                        <option value="super_admin" {% if request.args.get('role') == 'super_admin' %}selected{% endif %}>Super Admin</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="category" class="form-label">Category</label>
+                    <select class="form-control" id="category" name="category">
+                        <option value="">All Categories</option>
+                        <option value="MSME" {% if request.args.get('category') == 'MSME' %}selected{% endif %}>MSME</option>
+                        <option value="Transporter" {% if request.args.get('category') == 'Transporter' %}selected{% endif %}>Transporter</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-control" id="status" name="status">
+                        <option value="">All Status</option>
+                        <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                        <option value="suspended" {% if request.args.get('status') == 'suspended' %}selected{% endif %}>Suspended</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_range" class="form-label">Date Range</label>
+                    <select class="form-control" id="date_range" name="date_range">
+                        <option value="">All Time</option>
+                        <option value="today" {% if request.args.get('date_range') == 'today' %}selected{% endif %}>Today</option>
+                        <option value="this_week" {% if request.args.get('date_range') == 'this_week' %}selected{% endif %}>This Week</option>
+                        <option value="this_month" {% if request.args.get('date_range') == 'this_month' %}selected{% endif %}>This Month</option>
+                        <option value="this_year" {% if request.args.get('date_range') == 'this_year' %}selected{% endif %}>This Year</option>
+                        <option value="custom" {% if request.args.get('date_range') == 'custom' %}selected{% endif %}>Custom Range</option>
+                    </select>
+                </div>
+                <div class="col-md-3 date-fields" style="display: none;">
+                    <label for="date_from" class="form-label">From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.args.get('date_from', '') }}">
+                </div>
+                <div class="col-md-3 date-fields" style="display: none;">
+                    <label for="date_to" class="form-label">To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.args.get('date_to', '') }}">
+                </div>
+                <div class="col-md-12 mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Apply Filters
+                    </button>
+                    <a href="{{ url_for('admin.users') }}" class="btn btn-secondary">
+                        <i class="bi bi-eraser"></i> Clear Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Count -->
+    <div class="mb-3">
+        <p class="text-muted">Showing {{ users|length }} user(s)</p>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone</th>
+                            <th>NIN</th>
+                            <th>Role</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Registered</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.name }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.phone }}</td>
+                            <td>{{ user.nin }}</td>
+                            <td><span class="badge bg-info">{{ user.role }}</span></td>
+                            <td>{{ user.category or '-' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if user.status == 'active' else 'danger' }}">
+                                    {{ user.status }}
+                                </span>
+                            </td>
+                            <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <a href="{{ url_for('admin.view_user', user_id=user.id) }}" class="btn btn-sm btn-info" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('admin.edit_user', user_id=user.id) }}" class="btn btn-sm btn-warning" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{{ url_for('admin.toggle_user_status', user_id=user.id) }}" 
+                                   class="btn btn-sm btn-{{ 'danger' if user.status == 'active' else 'success' }}" 
+                                   title="{{ 'Suspend' if user.status == 'active' else 'Activate' }}">
+                                    <i class="bi bi-{{ 'pause-circle' if user.status == 'active' else 'play-circle' }}"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateRangeSelect = document.getElementById('date_range');
+    const dateFields = document.querySelectorAll('.date-fields');
+    
+    function toggleDateFields() {
+        if (dateRangeSelect.value === 'custom') {
+            dateFields.forEach(field => field.style.display = 'block');
+        } else {
+            dateFields.forEach(field => field.style.display = 'none');
+        }
+    }
+    
+    dateRangeSelect.addEventListener('change', toggleDateFields);
+    toggleDateFields(); // Initial check
+});
+</script>
+{% endblock %}

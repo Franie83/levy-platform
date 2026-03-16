@@ -1,0 +1,209 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Payments</h2>
+        <div>
+            <a href="{{ url_for('payment.pay') }}" class="btn btn-success me-2">
+                <i class="bi bi-plus-circle"></i> Make New Payment
+            </a>
+            <span class="badge bg-primary">Total: {{ payments|length }}</span>
+        </div>
+    </div>
+
+    <!-- Search and Filter Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-search"></i> Search & Filter Payments</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('admin.payments') }}" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           placeholder="Reference, Receipt #..." value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="payer" class="form-label">Payer</label>
+                    <input type="text" class="form-control" id="payer" name="payer" 
+                           placeholder="Payer name..." value="{{ request.args.get('payer', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="levy_type" class="form-label">Levy Type</label>
+                    <input type="text" class="form-control" id="levy_type" name="levy_type" 
+                           placeholder="Levy type..." value="{{ request.args.get('levy_type', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="min_amount" class="form-label">Min Amount (₦)</label>
+                    <input type="number" class="form-control" id="min_amount" name="min_amount" 
+                           placeholder="Min" value="{{ request.args.get('min_amount', '') }}" step="0.01" min="0">
+                </div>
+                <div class="col-md-1">
+                    <label for="max_amount" class="form-label">Max Amount</label>
+                    <input type="number" class="form-control" id="max_amount" name="max_amount" 
+                           placeholder="Max" value="{{ request.args.get('max_amount', '') }}" step="0.01" min="0">
+                </div>
+                <div class="col-md-2">
+                    <label for="payment_status" class="form-label">Payment Status</label>
+                    <select class="form-control" id="payment_status" name="payment_status">
+                        <option value="">All</option>
+                        <option value="success" {% if request.args.get('payment_status') == 'success' %}selected{% endif %}>Success</option>
+                        <option value="pending" {% if request.args.get('payment_status') == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="failed" {% if request.args.get('payment_status') == 'failed' %}selected{% endif %}>Failed</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="verification_status" class="form-label">Verification</label>
+                    <select class="form-control" id="verification_status" name="verification_status">
+                        <option value="">All</option>
+                        <option value="verified" {% if request.args.get('verification_status') == 'verified' %}selected{% endif %}>Verified</option>
+                        <option value="unverified" {% if request.args.get('verification_status') == 'unverified' %}selected{% endif %}>Unverified</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_range" class="form-label">Date Range</label>
+                    <select class="form-control" id="date_range" name="date_range">
+                        <option value="">All Time</option>
+                        <option value="today" {% if request.args.get('date_range') == 'today' %}selected{% endif %}>Today</option>
+                        <option value="this_week" {% if request.args.get('date_range') == 'this_week' %}selected{% endif %}>This Week</option>
+                        <option value="this_month" {% if request.args.get('date_range') == 'this_month' %}selected{% endif %}>This Month</option>
+                        <option value="this_year" {% if request.args.get('date_range') == 'this_year' %}selected{% endif %}>This Year</option>
+                        <option value="custom" {% if request.args.get('date_range') == 'custom' %}selected{% endif %}>Custom Range</option>
+                    </select>
+                </div>
+                <div class="col-md-3 date-fields" style="display: none;">
+                    <label for="date_from" class="form-label">From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.args.get('date_from', '') }}">
+                </div>
+                <div class="col-md-3 date-fields" style="display: none;">
+                    <label for="date_to" class="form-label">To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.args.get('date_to', '') }}">
+                </div>
+                <div class="col-md-12 mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Apply Filters
+                    </button>
+                    <a href="{{ url_for('admin.payments') }}" class="btn btn-secondary">
+                        <i class="bi bi-eraser"></i> Clear Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Count -->
+    <div class="mb-3">
+        <p class="text-muted">Showing {{ payments|length }} payment(s)</p>
+    </div>
+
+    <!-- Payments Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Reference</th>
+                            <th>Receipt</th>
+                            <th>Payer</th>
+                            <th>Entity</th>
+                            <th>Amount</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Verification</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>{{ payment.id }}</td>
+                            <td><code>{{ payment.payment_reference }}</code></td>
+                            <td><code>{{ payment.receipt_number }}</code></td>
+                            <td>{{ payment.payer.name }}</td>
+                            <td>
+                                {% if payment.business %}
+                                    <span class="badge bg-info">Business</span><br>
+                                    <small>{{ payment.business.business_name }}</small>
+                                {% elif payment.vehicle %}
+                                    <span class="badge bg-success">Vehicle</span><br>
+                                    <small>{{ payment.vehicle.plate_number }}</small>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td><strong class="text-primary">₦{{ "{:,.2f}".format(payment.amount) }}</strong></td>
+                            <td><small>{{ payment.levy_type }}</small></td>
+                            <td>
+                                {% if payment.payment_status == 'success' %}
+                                    <span class="badge bg-success">Success</span>
+                                {% elif payment.payment_status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif payment.payment_status == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ payment.payment_status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if payment.verification_status == 'verified' %}
+                                    <span class="badge bg-success">Verified</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Unverified</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ payment.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('admin.view_payment', payment_id=payment.id) }}" 
+                                       class="btn btn-sm btn-info" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('admin.edit_payment', payment_id=payment.id) }}" 
+                                       class="btn btn-sm btn-warning" title="Edit Payment">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    {% if payment.payment_status == 'success' and payment.verification_status == 'unverified' %}
+                                    <a href="{{ url_for('admin.verify_payment', payment_id=payment.id) }}" 
+                                       class="btn btn-sm btn-success" title="Verify Payment">
+                                        <i class="bi bi-check-circle"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if payment.payment_status == 'pending' %}
+                                    <a href="{{ url_for('payment.simulate', reference=payment.payment_reference) }}" 
+                                       class="btn btn-sm btn-primary" title="Complete Payment">
+                                        <i class="bi bi-credit-card"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateRangeSelect = document.getElementById('date_range');
+    const dateFields = document.querySelectorAll('.date-fields');
+    
+    function toggleDateFields() {
+        if (dateRangeSelect.value === 'custom') {
+            dateFields.forEach(field => field.style.display = 'block');
+        } else {
+            dateFields.forEach(field => field.style.display = 'none');
+        }
+    }
+    
+    dateRangeSelect.addEventListener('change', toggleDateFields);
+    toggleDateFields(); // Initial check
+});
+</script>
+{% endblock %}

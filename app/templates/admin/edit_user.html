@@ -1,0 +1,89 @@
+{% extends "base.html" %} 
+ 
+{% block content %} 
+<div class="container-fluid"> 
+    <div class="d-flex justify-content-between align-items-center mb-4"> 
+        <h2>Edit User: {{ user.name }}</h2> 
+        <a href="{{ url_for('admin.view_user', user_id=user.id) }}" class="btn btn-secondary">Cancel</a> 
+    </div> 
+ 
+    <div class="card"> 
+        <div class="card-header bg-primary text-white"> 
+            <h5 class="mb-0">Edit User Information</h5> 
+        </div> 
+        <div class="card-body"> 
+            <form method="POST" action="{{ url_for('admin.edit_user', user_id=user.id) }}"> 
+                <div class="row"> 
+                    <div class="col-md-6 mb-3"> 
+                        <label for="name" class="form-label">Full Name *</label> 
+                        <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required> 
+                    </div> 
+                    <div class="col-md-6 mb-3"> 
+                        <label for="email" class="form-label">Email Address *</label> 
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required> 
+                    </div> 
+                </div> 
+ 
+                <div class="row"> 
+                    <div class="col-md-6 mb-3"> 
+                        <label for="phone" class="form-label">Phone Number *</label> 
+                        <input type="tel" class="form-control" id="phone" name="phone" value="{{ user.phone }}" required> 
+                    </div> 
+                    <div class="col-md-6 mb-3"> 
+                        <label for="nin" class="form-label">NIN *</label> 
+                        <input type="text" class="form-control" id="nin" name="nin" value="{{ user.nin }}" readonly> 
+                        <small class="text-muted">NIN cannot be changed</small> 
+                    </div> 
+                </div> 
+ 
+                <div class="row"> 
+                    <div class="col-md-4 mb-3"> 
+                        <label for="role" class="form-label">Role *</label> 
+                        <select class="form-control" id="role" name="role" required onchange="toggleCategory()"> 
+                            <option value="payee" {% if user.role == 'payee' %}selected{% endif %}>Payee</option> 
+                            <option value="enforcer" {% if user.role == 'enforcer' %}selected{% endif %}>Enforcer</option> 
+                            <option value="super_admin" {% if user.role == 'super_admin' %}selected{% endif %}>Super Admin</option> 
+                        </select> 
+                    </div> 
+                    <div class="col-md-4 mb-3" id="category_div" style="display: {% if user.role == 'payee' %}block{% else %}none{% endif %};"> 
+                        <label for="category" class="form-label">Category *</label> 
+                        <select class="form-control" id="category" name="category"> 
+                            <option value="">Select Category</option> 
+                            <option value="MSME" {% if user.category == 'MSME' %}selected{% endif %}>MSME (Business Owner)</option> 
+                            <option value="Transporter" {% if user.category == 'Transporter' %}selected{% endif %}>Transporter (Vehicle Owner)</option> 
+                        </select> 
+                    </div> 
+                    <div class="col-md-4 mb-3"> 
+                        <label for="status" class="form-label">Status *</label> 
+                        <select class="form-control" id="status" name="status" required> 
+                            <option value="active" {% if user.status == 'active' %}selected{% endif %}>Active</option> 
+                            <option value="suspended" {% if user.status == 'suspended' %}selected{% endif %}>Suspended</option> 
+                        </select> 
+                    </div> 
+                </div> 
+ 
+                <hr> 
+                <button type="submit" class="btn btn-primary">Update User</button> 
+                <a href="{{ url_for('admin.view_user', user_id=user.id) }}" class="btn btn-secondary">Cancel</a> 
+            </form> 
+        </div> 
+    </div> 
+</div> 
+ 
+<script> 
+function toggleCategory() { 
+    var role = document.getElementById('role').value; 
+    var categoryDiv = document.getElementById('category_div'); 
+    var categorySelect = document.getElementById('category'); 
+ 
+    if (role === 'payee') { 
+        categoryDiv.style.display = 'block'; 
+        categorySelect.required = true; 
+    } else { 
+        categoryDiv.style.display = 'none'; 
+        categorySelect.required = false; 
+        categorySelect.value = ''; 
+    } 
+} 
+</script> 
+{% endblock %} 

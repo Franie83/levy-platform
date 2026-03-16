@@ -1,0 +1,33 @@
+{% extends "base.html" %} 
+ 
+{% block content %} 
+<div class="container-fluid"> 
+    <h2 class="mb-4">Enforcer Dashboard</h2> 
+ 
+    <div class="alert alert-info"> 
+        <h4>Enforcement Area</h4> 
+        <p>Welcome to the enforcer dashboard. This area is under construction.</p> 
+        <hr> 
+        <div class="row"> 
+            <div class="col-md-6 mb-3"> 
+                <div class="card"> 
+                    <div class="card-body text-center"> 
+                        <i class="bi bi-search display-4"></i> 
+                        <h5>Verify Payment</h5> 
+                        <a href="{{ url_for('enforcement.verify') }}" class="btn btn-primary">Go to Verification</a> 
+                    </div> 
+                </div> 
+            </div> 
+            <div class="col-md-6 mb-3"> 
+                <div class="card"> 
+                    <div class="card-body text-center"> 
+                        <i class="bi bi-exclamation-triangle display-4"></i> 
+                        <h5>Record Violation</h5> 
+                        <a href="{{ url_for('enforcement.record_violation') }}" class="btn btn-warning">Record Violation</a> 
+                    </div> 
+                </div> 
+            </div> 
+        </div> 
+    </div> 
+</div> 
+{% endblock %} 

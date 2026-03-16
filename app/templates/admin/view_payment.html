@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Payment Details</h2>
+        <div>
+            <a href="{{ url_for('admin.edit_payment', payment_id=payment.id) }}" class="btn btn-warning me-2">
+                <i class="bi bi-pencil"></i> Edit Payment
+            </a>
+            <a href="{{ url_for('admin.payments') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Payments
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Payment Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Reference:</th>
+                                    <td><code>{{ payment.payment_reference }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Receipt Number:</th>
+                                    <td><code>{{ payment.receipt_number }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Amount:</th>
+                                    <td><h4 class="text-primary">₦{{ "{:,.2f}".format(payment.amount) }}</h4></td>
+                                </tr>
+                                <tr>
+                                    <th>Levy Type:</th>
+                                    <td>{{ payment.levy_type }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Payment Status:</th>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if payment.payment_status == 'success' else 'warning' if payment.payment_status == 'pending' else 'danger' }}">
+                                            {{ payment.payment_status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Verification:</th>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if payment.verification_status == 'verified' else 'secondary' }}">
+                                            {{ payment.verification_status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Created:</th>
+                                    <td>{{ payment.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Payment Date:</th>
+                                    <td>{{ payment.payment_date.strftime('%Y-%m-%d %H:%M') if payment.payment_date else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Transaction ID:</th>
+                                    <td>{{ payment.transaction_id or 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Verified By:</th>
+                                    <td>{{ payment.verifier.name if payment.verifier else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Verification Date:</th>
+                                    <td>{{ payment.verification_date.strftime('%Y-%m-%d %H:%M') if payment.verification_date else 'N/A' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Entity Details</h5>
+                </div>
+                <div class="card-body">
+                    {% if payment.business %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Business Name:</strong> {{ payment.business.business_name }}</p>
+                            <p><strong>Business ID:</strong> {{ payment.business.business_id }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Owner:</strong> {{ payment.business.owner.name }}</p>
+                            <p><strong>Status:</strong> {{ payment.business.status }}</p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.view_business', business_id=payment.business.id) }}" class="btn btn-sm btn-info">
+                        <i class="bi bi-building"></i> View Business
+                    </a>
+                    {% elif payment.vehicle %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Plate Number:</strong> {{ payment.vehicle.plate_number }}</p>
+                            <p><strong>Vehicle ID:</strong> {{ payment.vehicle.vehicle_id }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Owner:</strong> {{ payment.vehicle.owner.name }}</p>
+                            <p><strong>Status:</strong> {{ payment.vehicle.status }}</p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.view_vehicle', vehicle_id=payment.vehicle.id) }}" class="btn btn-sm btn-info">
+                        <i class="bi bi-truck"></i> View Vehicle
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Payer Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ payment.payer.name }}</p>
+                    <p><strong>Email:</strong> {{ payment.payer.email }}</p>
+                    <p><strong>Phone:</strong> {{ payment.payer.phone }}</p>
+                    <p><strong>NIN:</strong> {{ payment.payer.nin }}</p>
+                    <a href="{{ url_for('admin.view_user', user_id=payment.payer.id) }}" class="btn btn-sm btn-info">
+                        <i class="bi bi-person"></i> View User
+                    </a>
+                </div>
+            </div>
+
+            {% if payment.receipt %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Receipt</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{{ url_for('static', filename='uploads/qrcodes/' + payment.receipt.qr_code) }}" 
+                         alt="QR Code" style="width: 150px; height: 150px;" class="mb-3">
+                    <p><strong>Receipt:</strong> {{ payment.receipt_number }}</p>
+                    <a href="{{ url_for('payment.receipt', payment_reference=payment.payment_reference) }}" 
+                       class="btn btn-sm btn-primary" target="_blank">
+                        <i class="bi bi-receipt"></i> View Full Receipt
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

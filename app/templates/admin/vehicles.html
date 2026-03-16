@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Manage Vehicles</h2>
+        <div>
+            <a href="{{ url_for('admin.register_vehicle') }}" class="btn btn-success me-2">
+                <i class="bi bi-plus-circle"></i> Register New Vehicle
+            </a>
+            <span class="badge bg-primary">Total: {{ vehicles|length }}</span>
+        </div>
+    </div>
+
+    <!-- Search and Filter Card -->
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><i class="bi bi-search"></i> Search & Filter Vehicles</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('admin.vehicles') }}" class="row g-3">
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" 
+                           placeholder="Plate, VIN, Registration..." value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="owner" class="form-label">Owner</label>
+                    <input type="text" class="form-control" id="owner" name="owner" 
+                           placeholder="Owner name..." value="{{ request.args.get('owner', '') }}">
+                </div>
+                <div class="col-md-2">
+                    <label for="vehicle_type" class="form-label">Vehicle Type</label>
+                    <select class="form-control" id="vehicle_type" name="vehicle_type">
+                        <option value="">All Types</option>
+                        {% for type in vehicle_types %}
+                        <option value="{{ type.name }}" {% if request.args.get('vehicle_type') == type.name %}selected{% endif %}>
+                            {{ type.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="brand" class="form-label">Brand</label>
+                    <input type="text" class="form-control" id="brand" name="brand" 
+                           placeholder="Brand..." value="{{ request.args.get('brand', '') }}">
+                </div>
+                <div class="col-md-1">
+                    <label for="year_from" class="form-label">Year From</label>
+                    <input type="number" class="form-control" id="year_from" name="year_from" 
+                           placeholder="From" value="{{ request.args.get('year_from', '') }}" min="1900" max="2026">
+                </div>
+                <div class="col-md-1">
+                    <label for="year_to" class="form-label">Year To</label>
+                    <input type="number" class="form-control" id="year_to" name="year_to" 
+                           placeholder="To" value="{{ request.args.get('year_to', '') }}" min="1900" max="2026">
+                </div>
+                <div class="col-md-1">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-control" id="status" name="status">
+                        <option value="">All</option>
+                        <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Active</option>
+                        <option value="suspended" {% if request.args.get('status') == 'suspended' %}selected{% endif %}>Suspended</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_range" class="form-label">Date Range</label>
+                    <select class="form-control" id="date_range" name="date_range">
+                        <option value="">All Time</option>
+                        <option value="today" {% if request.args.get('date_range') == 'today' %}selected{% endif %}>Today</option>
+                        <option value="this_week" {% if request.args.get('date_range') == 'this_week' %}selected{% endif %}>This Week</option>
+                        <option value="this_month" {% if request.args.get('date_range') == 'this_month' %}selected{% endif %}>This Month</option>
+                        <option value="this_year" {% if request.args.get('date_range') == 'this_year' %}selected{% endif %}>This Year</option>
+                        <option value="custom" {% if request.args.get('date_range') == 'custom' %}selected{% endif %}>Custom Range</option>
+                    </select>
+                </div>
+                <div class="col-md-3 date-fields" style="display: none;">
+                    <label for="date_from" class="form-label">From</label>
+                    <input type="date" class="form-control" id="date_from" name="date_from" value="{{ request.args.get('date_from', '') }}">
+                </div>
+                <div class="col-md-3 date-fields" style="display: none;">
+                    <label for="date_to" class="form-label">To</label>
+                    <input type="date" class="form-control" id="date_to" name="date_to" value="{{ request.args.get('date_to', '') }}">
+                </div>
+                <div class="col-md-12 mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Apply Filters
+                    </button>
+                    <a href="{{ url_for('admin.vehicles') }}" class="btn btn-secondary">
+                        <i class="bi bi-eraser"></i> Clear Filters
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Results Count -->
+    <div class="mb-3">
+        <p class="text-muted">Showing {{ vehicles|length }} vehicle(s)</p>
+    </div>
+
+    <!-- Vehicles Table -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>ID</th>
+                            <th>Vehicle ID</th>
+                            <th>Plate Number</th>
+                            <th>Owner</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Brand/Model</th>
+                            <th>Year</th>
+                            <th>Status</th>
+                            <th>Registered</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for vehicle in vehicles %}
+                        <tr>
+                            <td>{{ vehicle.id }}</td>
+                            <td><code>{{ vehicle.vehicle_id }}</code></td>
+                            <td><strong>{{ vehicle.plate_number }}</strong></td>
+                            <td>{{ vehicle.owner.name }}</td>
+                            <td>
+                                {% if vehicle.vehicle_type_ref %}
+                                    {{ vehicle.vehicle_type_ref.name }}
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if vehicle.vehicle_type_ref %}
+                                    <strong class="text-primary">₦{{ "{:,.2f}".format(vehicle.vehicle_type_ref.amount) }}</strong>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ vehicle.brand or '' }} {{ vehicle.model or '' }}</td>
+                            <td>{{ vehicle.year_of_manufacture or 'N/A' }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if vehicle.status == 'active' else 'danger' }}">
+                                    {{ vehicle.status }}
+                                </span>
+                            </td>
+                            <td>{{ vehicle.created_at.strftime('%Y-%m-%d') }}</td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <a href="{{ url_for('admin.view_vehicle', vehicle_id=vehicle.id) }}" 
+                                       class="btn btn-sm btn-info" title="View">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('admin.edit_vehicle', vehicle_id=vehicle.id) }}" 
+                                       class="btn btn-sm btn-warning" title="Edit">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{{ url_for('admin.toggle_vehicle_status', vehicle_id=vehicle.id) }}" 
+                                       class="btn btn-sm btn-{{ 'danger' if vehicle.status == 'active' else 'success' }}" 
+                                       title="{{ 'Suspend' if vehicle.status == 'active' else 'Activate' }}">
+                                        <i class="bi bi-{{ 'pause-circle' if vehicle.status == 'active' else 'play-circle' }}"></i>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('admin.delete_vehicle', vehicle_id=vehicle.id) }}" 
+                                          class="d-inline" onsubmit="return confirm('Delete this vehicle?');">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dateRangeSelect = document.getElementById('date_range');
+    const dateFields = document.querySelectorAll('.date-fields');
+    
+    function toggleDateFields() {
+        if (dateRangeSelect.value === 'custom') {
+            dateFields.forEach(field => field.style.display = 'block');
+        } else {
+            dateFields.forEach(field => field.style.display = 'none');
+        }
+    }
+    
+    dateRangeSelect.addEventListener('change', toggleDateFields);
+    toggleDateFields(); // Initial check
+});
+</script>
+{% endblock %}

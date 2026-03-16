@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Dashboard</h4>
+                </div>
+                <div class="card-body">
+                    <h5>Welcome, {{ current_user.name }}!</h5>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Category:</strong> {{ current_user.category or 'N/A' }}</p>
+                            <p><strong>Email:</strong> {{ current_user.email }}</p>
+                            <p><strong>NIN:</strong> {{ current_user.nin }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>Quick Actions</h6>
+                                    {% if current_user.role == 'payee' and current_user.category == 'MSME' %}
+                                    <a href="{{ url_for('business.register') }}" class="btn btn-primary btn-sm w-100 mb-2">Register Business</a>
+                                    <a href="{{ url_for('business.list') }}" class="btn btn-outline-primary btn-sm w-100 mb-2">View My Businesses</a>
+                                    <a href="{{ url_for('payment.pay') }}" class="btn btn-success btn-sm w-100">Make Payment</a>
+                                    {% elif current_user.role == 'payee' and current_user.category == 'Transporter' %}
+                                    <a href="{{ url_for('vehicle.register') }}" class="btn btn-success btn-sm w-100 mb-2">Register Vehicle</a>
+                                    <a href="{{ url_for('vehicle.list') }}" class="btn btn-outline-success btn-sm w-100 mb-2">View My Vehicles</a>
+                                    <a href="{{ url_for('payment.pay') }}" class="btn btn-primary btn-sm w-100">Make Payment</a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

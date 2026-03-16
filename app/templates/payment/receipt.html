@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">Payment Receipt</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <h5>Levy Management Platform</h5>
+                            <p>Official Payment Receipt</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            {% if payment.receipt %}
+                            <img src="{{ url_for('static', filename='uploads/qrcodes/' + payment.receipt.qr_code) }}" 
+                                 alt="QR Code" style="width: 100px; height: 100px;">
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Receipt Number:</strong>
+                            <p class="text-primary"><code>{{ payment.receipt_number }}</code></p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Payment Reference:</strong>
+                            <p><code>{{ payment.payment_reference }}</code></p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Payee Name:</strong>
+                            <p>{{ payment.payer.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>NIN:</strong>
+                            <p>{{ payment.payer.nin }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Entity Type:</strong>
+                            <p>{{ payment.levy_type }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Entity Details:</strong>
+                            <p>
+                                {% if payment.business %}
+                                    {{ payment.business.business_name }}<br>
+                                    <small>{{ payment.business.business_id }}</small>
+                                {% elif payment.vehicle %}
+                                    {{ payment.vehicle.plate_number }}<br>
+                                    <small>{{ payment.vehicle.brand }} {{ payment.vehicle.model }}</small>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Amount Paid:</strong>
+                            <h3 class="text-success">₦{{ "{:,.2f}".format(payment.amount) }}</h3>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Payment Date:</strong>
+                            <p>{{ payment.payment_date.strftime('%d %B, %Y %H:%M') if payment.payment_date else 'N/A' }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Payment Status:</strong>
+                            <p><span class="badge bg-success">{{ payment.payment_status|upper }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Verification Status:</strong>
+                            <p><span class="badge bg-info">{{ payment.verification_status|upper }}</span></p>
+                        </div>
+                    </div>
+                    
+                    {% if payment.payment_status == 'success' and payment.verification_status == 'verified' %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle"></i>
+                        This payment has been verified and is valid.
+                    </div>
+                    {% endif %}
+                    
+                    <div class="alert alert-info mt-4">
+                        <i class="bi bi-info-circle"></i> 
+                        This receipt can be verified by scanning the QR code or visiting:
+                        <br>
+                        <code>{{ url_for('payment.verify', receipt_number=payment.receipt_number, _external=True) }}</code>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button onclick="window.print()" class="btn btn-primary">
+                            <i class="bi bi-printer"></i> Print Receipt
+                        </button>
+                        <a href="{{ url_for('payment.history') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to History
+                        </a>
+                    </div>
+                </div>
+                <div class="card-footer text-muted">
+                    <small>Generated on {{ payment.payment_date.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

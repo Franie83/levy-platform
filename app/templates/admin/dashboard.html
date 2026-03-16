@@ -1,0 +1,102 @@
+{% extends "base.html" %} 
+ 
+{% block content %} 
+<div class="container-fluid"> 
+    <h2 class="mb-4">Admin Dashboard</h2> 
+ 
+    {# Statistics Cards #} 
+    <div class="row"> 
+        <div class="col-md-3 mb-3"> 
+            <div class="card text-white bg-primary"> 
+                <div class="card-body"> 
+                    <h5 class="card-title">Total Users</h5> 
+                    <h2 class="display-4">{{ total_users }}</h2> 
+                    <a href="{{ url_for('admin.users') }}" class="text-white">Manage Users <i class="bi bi-arrow-right"></i></a> 
+                </div> 
+            </div> 
+        </div> 
+        <div class="col-md-3 mb-3"> 
+            <div class="card text-white bg-success"> 
+                <div class="card-body"> 
+                    <h5 class="card-title">Total Businesses</h5> 
+                    <h2 class="display-4">{{ total_businesses }}</h2> 
+                    <a href="{{ url_for('admin.businesses') }}" class="text-white">Manage Businesses <i class="bi bi-arrow-right"></i></a> 
+                </div> 
+            </div> 
+        </div> 
+        <div class="col-md-3 mb-3"> 
+            <div class="card text-white bg-info"> 
+                <div class="card-body"> 
+                    <h5 class="card-title">Total Vehicles</h5> 
+                    <h2 class="display-4">{{ total_vehicles }}</h2> 
+                    <a href="{{ url_for('admin.vehicles') }}" class="text-white">Manage Vehicles <i class="bi bi-arrow-right"></i></a> 
+                </div> 
+            </div> 
+        </div> 
+        <div class="col-md-3 mb-3"> 
+            <div class="card text-white bg-warning"> 
+                <div class="card-body"> 
+                    <h5 class="card-title">Total Payments</h5> 
+                    <h2 class="display-4">{{ total_payments }}</h2> 
+                    <a href="{{ url_for('admin.payments') }}" class="text-white">View Payments <i class="bi bi-arrow-right"></i></a> 
+                </div> 
+            </div> 
+        </div> 
+    </div> 
+ 
+    {# Recent Activities #} 
+    <div class="row mt-4"> 
+        <div class="col-md-4"> 
+            <div class="card"> 
+                <div class="card-header bg-primary text-white"> 
+                    <h5 class="mb-0">Recent Users</h5> 
+                </div> 
+                <div class="card-body"> 
+                    <ul class="list-group"> 
+                        {% for user in recent_users %} 
+                        <li class="list-group-item d-flex justify-content-between align-items-center"> 
+                            {{ user.name }} 
+                            <span class="badge bg-{{ 'success' if user.status == 'active' else 'danger' }}">{{ user.status }}</span> 
+                        </li> 
+                        {% endfor %} 
+                    </ul> 
+                </div> 
+            </div> 
+        </div> 
+        <div class="col-md-4"> 
+            <div class="card"> 
+                <div class="card-header bg-success text-white"> 
+                    <h5 class="mb-0">Recent Businesses</h5> 
+                </div> 
+                <div class="card-body"> 
+                    <ul class="list-group"> 
+                        {% for business in recent_businesses %} 
+                        <li class="list-group-item"> 
+                            <strong>{{ business.business_name }}</strong><br> 
+                            <small>Owner: {{ business.owner.name }}</small> 
+                        </li> 
+                        {% endfor %} 
+                    </ul> 
+                </div> 
+            </div> 
+        </div> 
+        <div class="col-md-4"> 
+            <div class="card"> 
+                <div class="card-header bg-info text-white"> 
+                    <h5 class="mb-0">Recent Vehicles</h5> 
+                </div> 
+                <div class="card-body"> 
+                    <ul class="list-group"> 
+                        {% for vehicle in recent_vehicles %} 
+                        <li class="list-group-item"> 
+                            <strong>{{ vehicle.plate_number }}</strong><br> 
+                            <small>Owner: {{ vehicle.owner.name }}</small> 
+                        </li> 
+                        {% endfor %} 
+                    </ul> 
+                </div> 
+            </div> 
+        </div> 
+    </div> 
+</div> 
+{% endblock %} 

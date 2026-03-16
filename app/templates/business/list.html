@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>My Businesses</h2>
+        {% if current_user.role == 'payee' and current_user.category == 'MSME' %}
+        <a href="{{ url_for('business.register') }}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Register New Business
+        </a>
+        {% endif %}
+    </div>
+
+    {% if businesses %}
+    <div class="row">
+        {% for business in businesses %}
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ business.business_name }}</h5>
+                    <p class="card-text">
+                        <strong>Business ID:</strong> {{ business.business_id }}<br>
+                        <strong>Type:</strong> 
+                        {% if business.business_type_ref %}
+                            {{ business.business_type_ref.name }}
+                        {% else %}
+                            <span class="text-muted">Not assigned</span>
+                        {% endif %}<br>
+                        <strong>Amount Due:</strong> 
+                        {% if business.business_type_ref %}
+                            <span class="text-primary">₦{{ "{:,.2f}".format(business.business_type_ref.amount) }}</span>
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}<br>
+                        <strong>Status:</strong>
+                        <span class="badge bg-{{ 'success' if business.status == 'active' else 'danger' }}">
+                            {{ business.status }}
+                        </span>
+                    </p>
+                    <a href="{{ url_for('business.view', business_id=business.business_id) }}" class="btn btn-sm btn-info">View Details</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        You haven't registered any businesses yet.
+        {% if current_user.role == 'payee' and current_user.category == 'MSME' %}
+        <a href="{{ url_for('business.register') }}">Register your first business</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

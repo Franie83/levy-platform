@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Payment History</h2>
+        <a href="{{ url_for('payment.pay') }}" class="btn btn-success">
+            <i class="bi bi-plus-circle"></i> Make New Payment
+        </a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            {% if payments %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Reference</th>
+                            <th>Receipt</th>
+                            <th>Entity</th>
+                            <th>Amount</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Verification</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td><code>{{ payment.payment_reference }}</code></td>
+                            <td><code>{{ payment.receipt_number }}</code></td>
+                            <td>
+                                {% if payment.business %}
+                                    {{ payment.business.business_name }}
+                                {% elif payment.vehicle %}
+                                    {{ payment.vehicle.plate_number }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td><strong>₦{{ "{:,.2f}".format(payment.amount) }}</strong></td>
+                            <td>{{ payment.levy_type }}</td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if payment.payment_status == 'success' else 'warning' if payment.payment_status == 'pending' else 'danger' }}">
+                                    {{ payment.payment_status }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-{{ 'success' if payment.verification_status == 'verified' else 'secondary' }}">
+                                    {{ payment.verification_status }}
+                                </span>
+                            </td>
+                            <td>{{ payment.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                {% if payment.payment_status == 'success' %}
+                                <a href="{{ url_for('payment.receipt', payment_reference=payment.payment_reference) }}" 
+                                   class="btn btn-sm btn-info" title="View Receipt">
+                                    <i class="bi bi-receipt"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                No payment history found.
+                <a href="{{ url_for('payment.pay') }}" class="alert-link">Make your first payment</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Edit Payment</h2>
+        <div>
+            <a href="{{ url_for('admin.payments') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Payments
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">Payment Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('admin.edit_payment', payment_id=payment.id) }}">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Payment Reference</label>
+                                <input type="text" class="form-control" value="{{ payment.payment_reference }}" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Receipt Number</label>
+                                <input type="text" class="form-control" value="{{ payment.receipt_number }}" readonly>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Payer</label>
+                                <input type="text" class="form-control" value="{{ payment.payer.name }}" readonly>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Amount</label>
+                                <input type="text" class="form-control" value="₦{{ '{:,.2f}'.format(payment.amount) }}" readonly>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="payment_status" class="form-label">Payment Status</label>
+                                <select class="form-control" id="payment_status" name="payment_status">
+                                    <option value="pending" {% if payment.payment_status == 'pending' %}selected{% endif %}>Pending</option>
+                                    <option value="success" {% if payment.payment_status == 'success' %}selected{% endif %}>Success</option>
+                                    <option value="failed" {% if payment.payment_status == 'failed' %}selected{% endif %}>Failed</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="verification_status" class="form-label">Verification Status</label>
+                                <select class="form-control" id="verification_status" name="verification_status">
+                                    <option value="unverified" {% if payment.verification_status == 'unverified' %}selected{% endif %}>Unverified</option>
+                                    <option value="verified" {% if payment.verification_status == 'verified' %}selected{% endif %}>Verified</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Entity</label>
+                            <input type="text" class="form-control" 
+                                   value="{% if payment.business %}{{ payment.business.business_name }}{% elif payment.vehicle %}{{ payment.vehicle.plate_number }}{% endif %}" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Levy Type</label>
+                            <input type="text" class="form-control" value="{{ payment.levy_type }}" readonly>
+                        </div>
+
+                        <button type="submit" class="btn btn-warning">Update Payment</button>
+                        <a href="{{ url_for('admin.payments') }}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Payment Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Created:</strong> {{ payment.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    <p><strong>Payment Date:</strong> {{ payment.payment_date.strftime('%Y-%m-%d %H:%M') if payment.payment_date else 'N/A' }}</p>
+                    <p><strong>Transaction ID:</strong> {{ payment.transaction_id or 'N/A' }}</p>
+                    <p><strong>Verified By:</strong> {{ payment.verifier.name if payment.verifier else 'N/A' }}</p>
+                    <p><strong>Verification Date:</strong> {{ payment.verification_date.strftime('%Y-%m-%d %H:%M') if payment.verification_date else 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

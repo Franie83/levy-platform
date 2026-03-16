@@ -1,0 +1,81 @@
+{% extends "base.html" %} 
+ 
+{% block content %} 
+<div class="container-fluid"> 
+    <h2 class="mb-4">Reports</h2> 
+ 
+    <div class="row"> 
+        <div class="col-md-6 mb-4"> 
+            <div class="card"> 
+                <div class="card-header bg-primary text-white"> 
+                    <h5 class="mb-0">User Statistics</h5> 
+                </div> 
+                <div class="card-body"> 
+                    <canvas id="userChart"></canvas> 
+                </div> 
+            </div> 
+        </div> 
+        <div class="col-md-6 mb-4"> 
+            <div class="card"> 
+                <div class="card-header bg-success text-white"> 
+                    <h5 class="mb-0">Business Statistics</h5> 
+                </div> 
+                <div class="card-body"> 
+                    <canvas id="businessChart"></canvas> 
+                </div> 
+            </div> 
+        </div> 
+    </div> 
+ 
+    <div class="card"> 
+        <div class="card-header bg-info text-white"> 
+            <h5 class="mb-0">Export Data</h5> 
+        </div> 
+        <div class="card-body"> 
+            <div class="row"> 
+                <div class="col-md-3 mb-2"> 
+                    <a href="#" class="btn btn-outline-primary w-100">Export Users (CSV)</a> 
+                </div> 
+                <div class="col-md-3 mb-2"> 
+                    <a href="#" class="btn btn-outline-success w-100">Export Businesses (CSV)</a> 
+                </div> 
+                <div class="col-md-3 mb-2"> 
+                    <a href="#" class="btn btn-outline-info w-100">Export Vehicles (CSV)</a> 
+                </div> 
+                <div class="col-md-3 mb-2"> 
+                    <a href="#" class="btn btn-outline-warning w-100">Export Payments (CSV)</a> 
+                </div> 
+            </div> 
+        </div> 
+    </div> 
+ 
+</div> 
+ 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+<script> 
+// User Chart 
+new Chart(document.getElementById('userChart'), { 
+    type: 'pie', 
+    data: { 
+        labels: ['Admins', 'Enforcers', 'Payees'], 
+        datasets: [{ 
+            data: [1, 1, 3], 
+            backgroundColor: ['#ff6384', '#36a2eb', '#ffce56'] 
+        }] 
+    } 
+}); 
+ 
+// Business Chart 
+new Chart(document.getElementById('businessChart'), { 
+    type: 'bar', 
+    data: { 
+        labels: ['Active', 'Suspended'], 
+        datasets: [{ 
+            label: 'Businesses', 
+            data: [1, 0], 
+            backgroundColor: ['#4bc0c0', '#ff6384'] 
+        }] 
+    } 
+}); 
+</script> 
+{% endblock %} 

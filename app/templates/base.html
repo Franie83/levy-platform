@@ -1,0 +1,185 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+<head> 
+    <meta charset="UTF-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Levy Management Platform</title> 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet"> 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css"> 
+    <style> 
+        .sidebar { 
+            min-height: 100vh; 
+            background: linear-gradient(180deg, #2c3e50 0%, #3498db 100%); 
+            color: white; 
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1); 
+        } 
+        .sidebar a { 
+            color: #ecf0f1; 
+            text-decoration: none; 
+            padding: 12px 20px; 
+            display: block; 
+            transition: all 0.3s; 
+            border-left: 3px solid transparent; 
+        } 
+        .sidebar a:hover { 
+            background: rgba(255,255,255,0.1); 
+            padding-left: 30px; 
+            border-left: 3px solid #f1c40f; 
+        } 
+        .sidebar a.active { 
+            background: rgba(255,255,255,0.2); 
+            border-left: 3px solid #f1c40f; 
+            font-weight: bold; 
+        } 
+        .sidebar .brand { 
+            padding: 20px; 
+            font-size: 1.5rem; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            margin-bottom: 20px; 
+        } 
+        .content { 
+            padding: 20px; 
+            background-color: #f8f9fa; 
+            min-height: 100vh; 
+        } 
+        .navbar-top { 
+            background: white; 
+            padding: 15px 25px; 
+            margin-bottom: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
+        } 
+        .user-info { 
+            background: #e9ecef; 
+            padding: 5px 15px; 
+            border-radius: 20px; 
+        } 
+        .badge-role { 
+            background: #3498db; 
+            color: white; 
+            padding: 3px 10px; 
+            border-radius: 15px; 
+            font-size: 0.8rem; 
+        } 
+    </style> 
+</head> 
+<body> 
+    <div class="container-fluid"> 
+        <div class="row"> 
+            {% if current_user.is_authenticated %} 
+            <div class="col-md-2 px-0 sidebar"> 
+                <div class="brand"> 
+                    <i class="bi bi-shield-check"></i> Levy Platform 
+                </div> 
+                <nav> 
+                    {# Common for all authenticated users #} 
+                    <a href="{{ url_for('main.dashboard') }}" class="{% if request.endpoint == 'main.dashboard' %}active{% endif %}"> 
+                        <i class="bi bi-speedometer2"></i> Dashboard 
+                    </a> 
+ 
+                    {# Payee specific links #} 
+                    {% if current_user.role == 'payee' %} 
+                        {% if current_user.category == 'MSME' %} 
+                        <a href="{{ url_for('business.list') }}" class="{% if request.endpoint == 'business.list' %}active{% endif %}"> 
+                            <i class="bi bi-building"></i> My Businesses 
+                        </a> 
+                        {% elif current_user.category == 'Transporter' %} 
+                        <a href="{{ url_for('vehicle.list') }}" class="{% if request.endpoint == 'vehicle.list' %}active{% endif %}"> 
+                            <i class="bi bi-truck"></i> My Vehicles 
+                        </a> 
+                        {% endif %} 
+                        <a href="{{ url_for('payment.history') }}" class="{% if request.endpoint == 'payment.history' %}active{% endif %}"> 
+                            <i class="bi bi-credit-card"></i> Payment History 
+                        </a> 
+                    {% endif %} 
+ 
+                    {# Enforcer specific links #} 
+                    {% if current_user.role == 'enforcer' %} 
+                    <a href="{{ url_for('enforcement.dashboard') }}" class="{% if request.endpoint == 'enforcement.dashboard' %}active{% endif %}"> 
+                        <i class="bi bi-shield-check"></i> Enforcement 
+                    </a> 
+                    <a href="{{ url_for('enforcement.verify') }}" class="{% if request.endpoint == 'enforcement.verify' %}active{% endif %}"> 
+                        <i class="bi bi-search"></i> Verify Payment 
+                    </a> 
+                    {% endif %} 
+ 
+                    {# Super Admin specific links #} 
+                    {% if current_user.role == 'super_admin' %} 
+                    <a href="{{ url_for('admin.dashboard') }}" class="{% if request.endpoint == 'admin.dashboard' %}active{% endif %}"> 
+                        <i class="bi bi-speedometer2"></i> Admin Dashboard 
+                    </a> 
+                    <a href="{{ url_for('admin.users') }}" class="{% if request.endpoint == 'admin.users' %}active{% endif %}"> 
+                        <i class="bi bi-people"></i> Manage Users 
+                    </a> 
+
+                    {# Admin Registration Links #} 
+                    <hr class="bg-light"> 
+                    <h6 class="text-white-50 px-3 mt-3 mb-2">Admin Registration</h6> 
+                    <a href="{{ url_for('admin.register_business') }}" class="{% if request.endpoint == 'admin.register_business' %}active{% endif %}"> 
+                        <i class="bi bi-building-add"></i> Register Business 
+                    </a> 
+                    <a href="{{ url_for('admin.register_vehicle') }}" class="{% if request.endpoint == 'admin.register_vehicle' %}active{% endif %}"> 
+                        <i class="bi bi-truck"></i> Register Vehicle 
+                    </a> 
+
+                    <a href="{{ url_for('admin.businesses') }}" class="{% if request.endpoint == 'admin.businesses' %}active{% endif %}"> 
+                        <i class="bi bi-building"></i> Businesses 
+                    </a> 
+                    <a href="{{ url_for('admin.vehicles') }}" class="{% if request.endpoint == 'admin.vehicles' %}active{% endif %}"> 
+                        <i class="bi bi-truck"></i> Vehicles 
+                    </a> 
+                    <a href="{{ url_for('admin.payments') }}" class="{% if request.endpoint == 'admin.payments' %}active{% endif %}"> 
+                        <i class="bi bi-credit-card"></i> Payments 
+                    </a> 
+                    <a href="{{ url_for('admin.reports') }}" class="{% if request.endpoint == 'admin.reports' %}active{% endif %}"> 
+                        <i class="bi bi-graph-up"></i> Reports 
+                    </a> 
+                    {% endif %} 
+ 
+                    {# Logout link for all #} 
+                    <hr class="bg-light"> 
+                    <a href="{{ url_for('auth.logout') }}"> 
+                        <i class="bi bi-box-arrow-right"></i> Logout 
+                    </a> 
+                </nav> 
+            </div> 
+            <div class="col-md-10 px-0"> 
+                <div class="navbar-top d-flex justify-content-between align-items-center"> 
+                    <div> 
+                        <h5 class="mb-0">Welcome, <strong>{{ current_user.name }}</strong></h5> 
+                    </div> 
+                    <div class="user-info"> 
+                        <i class="bi bi-person-circle me-2"></i> 
+                        {% if current_user.category %} 
+                        <span class="badge bg-secondary">{{ current_user.category }}</span> 
+                        {% endif %} 
+                    </div> 
+                </div> 
+                <div class="content"> 
+                    {% with messages = get_flashed_messages(with_categories=true) %} 
+                        {% if messages %} 
+                            {% for category, message in messages %} 
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert"> 
+                                    {{ message }} 
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button> 
+                                </div> 
+                            {% endfor %} 
+                        {% endif %} 
+                    {% endwith %} 
+ 
+                    {% block content %}{% endblock %} 
+                </div> 
+            </div> 
+            {% else %} 
+            <div class="col-12"> 
+                {% block auth_content %}{% endblock %} 
+            </div> 
+            {% endif %} 
+        </div> 
+    </div> 
+ 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script> 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> 
+    {% block scripts %}{% endblock %} 
+</body> 
+</html>

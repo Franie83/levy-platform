@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Simulated Payment</h4>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-credit-card" style="font-size: 4rem; color: #3498db;"></i>
+                    </div>
+                    
+                    <h5>Payment Details</h5>
+                    <table class="table table-bordered mt-3">
+                        <tr>
+                            <th>Reference</th>
+                            <td><code>{{ payment.payment_reference }}</code></td>
+                        </tr>
+                        <tr>
+                            <th>Amount</th>
+                            <td><strong class="text-primary">₦{{ "{:,.2f}".format(payment.amount) }}</strong></td>
+                        </tr>
+                        <tr>
+                            <th>Levy Type</th>
+                            <td>{{ payment.levy_type }}</td>
+                        </tr>
+                        <tr>
+                            <th>Entity</th>
+                            <td>
+                                {% if payment.business %}
+                                    {{ payment.business.business_name }}
+                                {% elif payment.vehicle %}
+                                    {{ payment.vehicle.plate_number }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Development Mode Simulation</strong><br>
+                        This is a simulated payment. No real money will be transferred.
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{{ url_for('payment.simulate_success', reference=payment.payment_reference) }}" 
+                           class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle"></i> Simulate Successful Payment
+                        </a>
+                        <a href="{{ url_for('payment.simulate_failure', reference=payment.payment_reference) }}" 
+                           class="btn btn-danger btn-lg">
+                            <i class="bi bi-x-circle"></i> Simulate Failed Payment
+                        </a>
+                        <a href="{{ url_for('payment.cancel') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

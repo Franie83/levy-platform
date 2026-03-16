@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Edit Vehicle: {{ vehicle.plate_number }}</h2>
+        <div>
+            <a href="{{ url_for('admin.view_vehicle', vehicle_id=vehicle.id) }}" class="btn btn-info me-2">
+                <i class="bi bi-eye"></i> View Vehicle
+            </a>
+            <a href="{{ url_for('admin.vehicles') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Vehicles
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0">Edit Vehicle Information</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin.edit_vehicle', vehicle_id=vehicle.id) }}" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="owner_id" class="form-label">Assign to User *</label>
+                        <select class="form-control" id="owner_id" name="owner_id" required>
+                            <option value="">Select User</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if user.id == vehicle.owner_id %}selected{% endif %}>
+                                {{ user.name }} ({{ user.nin }}) - {{ user.category }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="plate_number" class="form-label">Plate Number *</label>
+                        <input type="text" class="form-control" id="plate_number" name="plate_number" 
+                               value="{{ vehicle.plate_number }}" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="vehicle_type_id" class="form-label">Vehicle Type</label>
+                        <select class="form-control" id="vehicle_type_id" name="vehicle_type_id">
+                            <option value="">Select Type</option>
+                            {% for type in vehicle_types %}
+                            <option value="{{ type.id }}" {% if vehicle.vehicle_type_id == type.id %}selected{% endif %}>
+                                {{ type.name }} - ₦{{ "{:,.2f}".format(type.amount) }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="brand" class="form-label">Brand</label>
+                        <input type="text" class="form-control" id="brand" name="brand" 
+                               value="{{ vehicle.brand or '' }}" placeholder="e.g., Toyota">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="model" class="form-label">Model</label>
+                        <input type="text" class="form-control" id="model" name="model" 
+                               value="{{ vehicle.model or '' }}" placeholder="e.g., Camry">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label for="year_of_manufacture" class="form-label">Year</label>
+                        <input type="number" class="form-control" id="year_of_manufacture" name="year_of_manufacture" 
+                               value="{{ vehicle.year_of_manufacture or '' }}" min="1900" max="2026">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="color" class="form-label">Color</label>
+                        <input type="text" class="form-control" id="color" name="color" 
+                               value="{{ vehicle.color or '' }}">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="engine_capacity" class="form-label">Engine Capacity</label>
+                        <input type="text" class="form-control" id="engine_capacity" name="engine_capacity" 
+                               value="{{ vehicle.engine_capacity or '' }}" placeholder="e.g., 2.0L">
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label for="seating_capacity" class="form-label">Seating Capacity</label>
+                        <input type="number" class="form-control" id="seating_capacity" name="seating_capacity" 
+                               value="{{ vehicle.seating_capacity or '' }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="vin" class="form-label">VIN</label>
+                        <input type="text" class="form-control" id="vin" name="vin" 
+                               value="{{ vehicle.vin or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="registration_number" class="form-label">Registration Number</label>
+                        <input type="text" class="form-control" id="registration_number" name="registration_number" 
+                               value="{{ vehicle.registration_number or '' }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="road_worthiness_number" class="form-label">Road Worthiness</label>
+                        <input type="text" class="form-control" id="road_worthiness_number" name="road_worthiness_number" 
+                               value="{{ vehicle.road_worthiness_number or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="insurance_policy_number" class="form-label">Insurance Policy</label>
+                        <input type="text" class="form-control" id="insurance_policy_number" name="insurance_policy_number" 
+                               value="{{ vehicle.insurance_policy_number or '' }}">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="business_id" class="form-label">Associated Business (Optional)</label>
+                    <select class="form-control" id="business_id" name="business_id">
+                        <option value="">No Business Association</option>
+                        {% for business in businesses %}
+                        <option value="{{ business.id }}" {% if vehicle.business_id == business.id %}selected{% endif %}>
+                            {{ business.business_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="vehicle_photo" class="form-label">Vehicle Photo</label>
+                        <input type="file" class="form-control" id="vehicle_photo" name="vehicle_photo" accept="image/*">
+                        {% if vehicle.vehicle_photo %}
+                        <div class="mt-2">
+                            <img src="{{ url_for('static', filename='uploads/vehicles/' + vehicle.vehicle_photo) }}" 
+                                 style="max-height: 100px;" class="img-thumbnail">
+                            <small class="text-muted d-block">Current photo. Upload new to replace.</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="plate_photo" class="form-label">License Plate Photo</label>
+                        <input type="file" class="form-control" id="plate_photo" name="plate_photo" accept="image/*">
+                        {% if vehicle.plate_photo %}
+                        <div class="mt-2">
+                            <img src="{{ url_for('static', filename='uploads/vehicles/' + vehicle.plate_photo) }}" 
+                                 style="max-height: 100px;" class="img-thumbnail">
+                            <small class="text-muted d-block">Current photo. Upload new to replace.</small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-warning">Update Vehicle</button>
+                <a href="{{ url_for('admin.view_vehicle', vehicle_id=vehicle.id) }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

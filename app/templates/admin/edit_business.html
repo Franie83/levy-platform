@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Edit Business: {{ business.business_name }}</h2>
+        <div>
+            <a href="{{ url_for('admin.view_business', business_id=business.id) }}" class="btn btn-info me-2">
+                <i class="bi bi-eye"></i> View Business
+            </a>
+            <a href="{{ url_for('admin.businesses') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Businesses
+            </a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header bg-warning text-white">
+            <h5 class="mb-0">Edit Business Information</h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin.edit_business', business_id=business.id) }}" enctype="multipart/form-data">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="owner_id" class="form-label">Assign to User *</label>
+                        <select class="form-control" id="owner_id" name="owner_id" required>
+                            <option value="">Select User</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if user.id == business.owner_id %}selected{% endif %}>
+                                {{ user.name }} ({{ user.nin }}) - {{ user.category }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="business_name" class="form-label">Business Name *</label>
+                        <input type="text" class="form-control" id="business_name" name="business_name" 
+                               value="{{ business.business_name }}" required>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="business_type_id" class="form-label">Business Type</label>
+                        <select class="form-control" id="business_type_id" name="business_type_id">
+                            <option value="">Select Business Type</option>
+                            {% for type in business_types %}
+                            <option value="{{ type.id }}" {% if business.business_type_id == type.id %}selected{% endif %}>
+                                {{ type.name }} - ₦{{ "{:,.2f}".format(type.amount) }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="industry_sector_id" class="form-label">Industry Sector</label>
+                        <select class="form-control" id="industry_sector_id" name="industry_sector_id">
+                            <option value="">Select Sector</option>
+                            {% for sector in industry_sectors %}
+                            <option value="{{ sector.id }}" {% if business.industry_sector_id == sector.id %}selected{% endif %}>
+                                {{ sector.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="registration_number" class="form-label">Registration Number</label>
+                        <input type="text" class="form-control" id="registration_number" name="registration_number" 
+                               value="{{ business.registration_number or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="tin" class="form-label">TIN</label>
+                        <input type="text" class="form-control" id="tin" name="tin" 
+                               value="{{ business.tin or '' }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="business_phone" class="form-label">Business Phone</label>
+                        <input type="tel" class="form-control" id="business_phone" name="business_phone" 
+                               value="{{ business.business_phone or '' }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="business_email" class="form-label">Business Email</label>
+                        <input type="email" class="form-control" id="business_email" name="business_email" 
+                               value="{{ business.business_email or '' }}">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="employee_count" class="form-label">Employees</label>
+                        <input type="number" class="form-control" id="employee_count" name="employee_count" 
+                               value="{{ business.employee_count or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="year_established" class="form-label">Year Established</label>
+                        <input type="number" class="form-control" id="year_established" name="year_established" 
+                               value="{{ business.year_established or '' }}" min="1900" max="2026">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="gps_coordinates" class="form-label">GPS Coordinates</label>
+                        <input type="text" class="form-control" id="gps_coordinates" name="gps_coordinates" 
+                               value="{{ business.gps_coordinates or '' }}" placeholder="lat,lng">
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="state" class="form-label">State</label>
+                        <input type="text" class="form-control" id="state" name="state" 
+                               value="{{ business.state or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="lga" class="form-label">LGA</label>
+                        <input type="text" class="form-control" id="lga" name="lga" 
+                               value="{{ business.lga or '' }}">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="ward" class="form-label">Ward</label>
+                        <input type="text" class="form-control" id="ward" name="ward" 
+                               value="{{ business.ward or '' }}">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="address" class="form-label">Address</label>
+                    <textarea class="form-control" id="address" name="address" rows="2">{{ business.address or '' }}</textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="business_photo" class="form-label">Business Photo</label>
+                    <input type="file" class="form-control" id="business_photo" name="business_photo" accept="image/*">
+                    {% if business.business_photo %}
+                    <div class="mt-2">
+                        <img src="{{ url_for('static', filename='uploads/' + business.business_photo) }}" 
+                             style="max-height: 100px;" class="img-thumbnail">
+                        <small class="text-muted d-block">Current photo. Upload new to replace.</small>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-warning">Update Business</button>
+                <a href="{{ url_for('admin.view_business', business_id=business.id) }}" class="btn btn-secondary">Cancel</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

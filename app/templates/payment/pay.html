@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Make Payment</h2>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Payment Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('payment.pay') }}" id="paymentForm">
+                        
+                        {# Admin User Selection - Only shown to admin #}
+                        {% if is_admin %}
+                        <div class="card mb-4 border-warning">
+                            <div class="card-header bg-warning text-white">
+                                <h5 class="mb-0"><i class="bi bi-person-badge"></i> Admin Payment</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-12 mb-3">
+                                        <label for="user_id" class="form-label">Pay for User *</label>
+                                        <select class="form-control" id="user_id" name="user_id" required>
+                                            <option value="">Select User</option>
+                                            {% for user in users %}
+                                            <option value="{{ user.id }}">{{ user.name }} ({{ user.nin }}) - {{ user.category }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle"></i>
+                                            You are making a payment on behalf of this user
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {# For MSME users - show only Business Levy option #}
+                        {% if current_user.category == 'MSME' and not is_admin %}
+                            <div class="mb-3">
+                                <label class="form-label">Payment Type</label>
+                                <div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="entity_type" id="type_business" value="business" checked disabled>
+                                        <label class="form-check-label" for="type_business">
+                                            <strong>Business Levy</strong> (for MSME users)
+                                        </label>
+                                    </div>
+                                    <input type="hidden" name="entity_type" value="business">
+                                </div>
+                                <small class="text-muted">You are registered as an MSME user. Business levies only.</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="business_id" class="form-label">Select Business *</label>
+                                <select class="form-control" id="business_id" name="entity_id" required>
+                                    <option value="">Choose a business</option>
+                                    {% for business in businesses %}
+                                        {% if business.business_type_ref %}
+                                        <option value="{{ business.id }}" 
+                                                data-amount="{{ business.business_type_ref.amount }}"
+                                                data-type="{{ business.business_type_ref.name }}">
+                                            {{ business.business_name }} ({{ business.business_type_ref.name }} - ₦{{ "{:,.2f}".format(business.business_type_ref.amount) }})
+                                        </option>
+                                        {% else %}
+                                        <option value="{{ business.id }}" data-amount="0">
+                                            {{ business.business_name }} (No type assigned)
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    Amount is based on business type (managed by admin)
+                                </small>
+                            </div>
+                            
+                        {# For Transporter users - show only Vehicle Levy option #}
+                        {% elif current_user.category == 'Transporter' and not is_admin %}
+                            <div class="mb-3">
+                                <label class="form-label">Payment Type</label>
+                                <div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="entity_type" id="type_vehicle" value="vehicle" checked disabled>
+                                        <label class="form-check-label" for="type_vehicle">
+                                            <strong>Vehicle Levy</strong> (for Transporter users)
+                                        </label>
+                                    </div>
+                                    <input type="hidden" name="entity_type" value="vehicle">
+                                </div>
+                                <small class="text-muted">You are registered as a Transporter user. Vehicle levies only.</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="vehicle_id" class="form-label">Select Vehicle *</label>
+                                <select class="form-control" id="vehicle_id" name="entity_id" required>
+                                    <option value="">Choose a vehicle</option>
+                                    {% for vehicle in vehicles %}
+                                        {% if vehicle.vehicle_type_ref %}
+                                        <option value="{{ vehicle.id }}" 
+                                                data-amount="{{ vehicle.vehicle_type_ref.amount }}"
+                                                data-type="{{ vehicle.vehicle_type_ref.name }}">
+                                            {{ vehicle.plate_number }} - {{ vehicle.vehicle_type_ref.name }} (₦{{ "{:,.2f}".format(vehicle.vehicle_type_ref.amount) }})
+                                        </option>
+                                        {% else %}
+                                        <option value="{{ vehicle.id }}" data-amount="0">
+                                            {{ vehicle.plate_number }} (No type assigned)
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    Amount is based on vehicle type (managed by admin)
+                                </small>
+                            </div>
+                            
+                        {# For Super Admin or other users - show both options with all entities #}
+                        {% else %}
+                            <div class="mb-3">
+                                <label class="form-label">Select Payment Type *</label>
+                                <div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="entity_type" id="type_business" value="business" checked>
+                                        <label class="form-check-label" for="type_business">Business Levy</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="entity_type" id="type_vehicle" value="vehicle">
+                                        <label class="form-check-label" for="type_vehicle">Vehicle Levy</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3" id="business_select">
+                                <label for="business_id" class="form-label">Select Business *</label>
+                                <select class="form-control" id="business_id" name="entity_id">
+                                    <option value="">Choose a business</option>
+                                    {% for business in businesses %}
+                                        {% if business.business_type_ref %}
+                                        <option value="{{ business.id }}" 
+                                                data-amount="{{ business.business_type_ref.amount }}"
+                                                data-type="{{ business.business_type_ref.name }}"
+                                                data-owner="{{ business.owner.name }}">
+                                            {% if is_admin %}
+                                                {{ business.business_name }} (Owner: {{ business.owner.name }}) - {{ business.business_type_ref.name }} (₦{{ "{:,.2f}".format(business.business_type_ref.amount) }})
+                                            {% else %}
+                                                {{ business.business_name }} ({{ business.business_type_ref.name }} - ₦{{ "{:,.2f}".format(business.business_type_ref.amount) }})
+                                            {% endif %}
+                                        </option>
+                                        {% else %}
+                                        <option value="{{ business.id }}" data-amount="0" data-owner="{{ business.owner.name }}">
+                                            {% if is_admin %}
+                                                {{ business.business_name }} (Owner: {{ business.owner.name }}) - No type assigned
+                                            {% else %}
+                                                {{ business.business_name }} (No type assigned)
+                                            {% endif %}
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% if is_admin %}
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    Showing all businesses. Select a user above to assign payment.
+                                </small>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-3" id="vehicle_select" style="display: none;">
+                                <label for="vehicle_id" class="form-label">Select Vehicle *</label>
+                                <select class="form-control" id="vehicle_id" name="entity_id">
+                                    <option value="">Choose a vehicle</option>
+                                    {% for vehicle in vehicles %}
+                                        {% if vehicle.vehicle_type_ref %}
+                                        <option value="{{ vehicle.id }}" 
+                                                data-amount="{{ vehicle.vehicle_type_ref.amount }}"
+                                                data-type="{{ vehicle.vehicle_type_ref.name }}"
+                                                data-owner="{{ vehicle.owner.name }}">
+                                            {% if is_admin %}
+                                                {{ vehicle.plate_number }} (Owner: {{ vehicle.owner.name }}) - {{ vehicle.vehicle_type_ref.name }} (₦{{ "{:,.2f}".format(vehicle.vehicle_type_ref.amount) }})
+                                            {% else %}
+                                                {{ vehicle.plate_number }} - {{ vehicle.vehicle_type_ref.name }} (₦{{ "{:,.2f}".format(vehicle.vehicle_type_ref.amount) }})
+                                            {% endif %}
+                                        </option>
+                                        {% else %}
+                                        <option value="{{ vehicle.id }}" data-amount="0" data-owner="{{ vehicle.owner.name }}">
+                                            {% if is_admin %}
+                                                {{ vehicle.plate_number }} (Owner: {{ vehicle.owner.name }}) - No type assigned
+                                            {% else %}
+                                                {{ vehicle.plate_number }} (No type assigned)
+                                            {% endif %}
+                                        </option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                                {% if is_admin %}
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle"></i>
+                                    Showing all vehicles. Select a user above to assign payment.
+                                </small>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
+                        {# Levy Type Selection - Optional #}
+                        <div class="mb-3">
+                            <label for="levy_type" class="form-label">Levy Type (Optional)</label>
+                            <select class="form-control" id="levy_type" name="levy_type">
+                                <option value="">Select Levy Type (Optional)</option>
+                                {% for levy in levy_types %}
+                                    {% if (current_user.category == 'MSME' and levy.category == 'business') or 
+                                          (current_user.category == 'Transporter' and levy.category == 'vehicle') or
+                                          is_admin %}
+                                    <option value="{{ levy.name }}" data-amount="{{ levy.amount }}" data-category="{{ levy.category }}">
+                                        {{ levy.name }} - ₦{{ "{:,.2f}".format(levy.amount) }} ({{ levy.frequency }})
+                                        {% if is_admin %} - {{ levy.category|title }}{% endif %}
+                                    </option>
+                                    {% elif current_user.category not in ['MSME', 'Transporter'] and not is_admin %}
+                                    <option value="{{ levy.name }}" data-amount="{{ levy.amount }}" data-category="{{ levy.category }}">
+                                        {{ levy.name }} - ₦{{ "{:,.2f}".format(levy.amount) }} ({{ levy.frequency }}) - {{ levy.category|title }}
+                                    </option>
+                                    {% endif %}
+                                {% endfor %}
+                            </select>
+                            {% if current_user.category == 'MSME' and not is_admin %}
+                            <small class="text-muted">Showing business levies only. Leave empty to use business type amount.</small>
+                            {% elif current_user.category == 'Transporter' and not is_admin %}
+                            <small class="text-muted">Showing vehicle levies only. Leave empty to use vehicle type amount.</small>
+                            {% elif is_admin %}
+                            <small class="text-muted">Showing all levy types. Leave empty to use entity type amount.</small>
+                            {% endif %}
+                        </div>
+                        
+                        {# Custom Amount Input - Shows when no levy type selected #}
+                        <div class="mb-3" id="custom_amount_div" style="display: none;">
+                            <label for="custom_amount" class="form-label">Enter Amount (₦)</label>
+                            <input type="number" class="form-control" id="custom_amount" name="custom_amount" min="0" step="0.01" placeholder="Enter amount">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Amount to Pay</label>
+                            <h3 id="display_amount" class="text-primary">₦0.00</h3>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>Development Mode:</strong> This is a simulated payment. No real money will be charged.
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-credit-card"></i> Proceed to Payment
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Payment Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><i class="bi bi-shield-check text-success"></i> Secure simulated payment</p>
+                    <p><i class="bi bi-credit-card text-primary"></i> Test with any values</p>
+                    <p><i class="bi bi-clock text-warning"></i> Instant simulation</p>
+                    <p><i class="bi bi-receipt text-info"></i> Digital receipt with QR code</p>
+                    <hr>
+                    <p class="small text-muted">
+                        <i class="bi bi-info-circle"></i>
+                        Amount is determined by the type of business or vehicle selected. Changes made by admin to type amounts affect all entities of that type.
+                    </p>
+                    {% if is_admin %}
+                    <div class="alert alert-warning mt-3 mb-0">
+                        <i class="bi bi-person-badge"></i>
+                        <strong>Admin Mode:</strong> You can pay for any user's businesses or vehicles.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get references to elements
+    const vehicleSelect = document.getElementById('vehicle_id');
+    const businessSelect = document.getElementById('business_id');
+    const levyTypeSelect = document.getElementById('levy_type');
+    const customAmountDiv = document.getElementById('custom_amount_div');
+    const customAmountInput = document.getElementById('custom_amount');
+    const displayAmount = document.getElementById('display_amount');
+    const userSelect = document.getElementById('user_id');
+    
+    // Function to update amount display
+    function updateAmount() {
+        let amount = 0;
+        
+        // Check which entity type is selected based on user category
+        {% if current_user.category == 'MSME' and not is_admin %}
+            // For MSME users - check business selection
+            if (businessSelect && businessSelect.value) {
+                const selectedOption = businessSelect.options[businessSelect.selectedIndex];
+                const entityAmount = selectedOption.getAttribute('data-amount');
+                if (entityAmount) {
+                    amount = parseFloat(entityAmount);
+                }
+            }
+        {% elif current_user.category == 'Transporter' and not is_admin %}
+            // For Transporter users - check vehicle selection
+            if (vehicleSelect && vehicleSelect.value) {
+                const selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
+                const entityAmount = selectedOption.getAttribute('data-amount');
+                if (entityAmount) {
+                    amount = parseFloat(entityAmount);
+                }
+            }
+        {% else %}
+            // For Super Admin - check which radio is selected
+            const selectedType = document.querySelector('input[name="entity_type"]:checked');
+            if (selectedType) {
+                if (selectedType.value === 'business' && businessSelect && businessSelect.value) {
+                    const selectedOption = businessSelect.options[businessSelect.selectedIndex];
+                    const entityAmount = selectedOption.getAttribute('data-amount');
+                    if (entityAmount) {
+                        amount = parseFloat(entityAmount);
+                    }
+                } else if (selectedType.value === 'vehicle' && vehicleSelect && vehicleSelect.value) {
+                    const selectedOption = vehicleSelect.options[vehicleSelect.selectedIndex];
+                    const entityAmount = selectedOption.getAttribute('data-amount');
+                    if (entityAmount) {
+                        amount = parseFloat(entityAmount);
+                    }
+                }
+            }
+        {% endif %}
+        
+        // Check if a levy type is selected (this overrides entity amount)
+        if (levyTypeSelect && levyTypeSelect.value) {
+            const selectedOption = levyTypeSelect.options[levyTypeSelect.selectedIndex];
+            const levyAmount = selectedOption.getAttribute('data-amount');
+            if (levyAmount) {
+                amount = parseFloat(levyAmount);
+            }
+        }
+        
+        // Check if custom amount is entered (this overrides everything)
+        if (customAmountDiv.style.display === 'block' && customAmountInput.value) {
+            amount = parseFloat(customAmountInput.value) || 0;
+        }
+        
+        // Update display
+        displayAmount.textContent = '₦' + amount.toLocaleString('en-NG', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+    }
+    
+    // Add event listeners based on user category
+    {% if current_user.category == 'MSME' and not is_admin %}
+        // Business selection change for MSME users
+        if (businessSelect) {
+            businessSelect.addEventListener('change', function() {
+                updateAmount();
+            });
+        }
+    {% elif current_user.category == 'Transporter' and not is_admin %}
+        // Vehicle selection change for Transporter users
+        if (vehicleSelect) {
+            vehicleSelect.addEventListener('change', function() {
+                updateAmount();
+            });
+        }
+    {% else %}
+        // For Super Admin - handle radio button changes
+        const radioButtons = document.querySelectorAll('input[name="entity_type"]');
+        if (radioButtons.length > 0) {
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'business') {
+                        document.getElementById('business_select').style.display = 'block';
+                        document.getElementById('vehicle_select').style.display = 'none';
+                        document.getElementById('business_id').required = true;
+                        document.getElementById('vehicle_id').required = false;
+                    } else {
+                        document.getElementById('business_select').style.display = 'none';
+                        document.getElementById('vehicle_select').style.display = 'block';
+                        document.getElementById('business_id').required = false;
+                        document.getElementById('vehicle_id').required = true;
+                    }
+                    updateAmount();
+                });
+            });
+        }
+        
+        // Add change listeners for both selects
+        if (businessSelect) {
+            businessSelect.addEventListener('change', updateAmount);
+        }
+        if (vehicleSelect) {
+            vehicleSelect.addEventListener('change', updateAmount);
+        }
+    {% endif %}
+    
+    // Levy type change
+    if (levyTypeSelect) {
+        levyTypeSelect.addEventListener('change', function() {
+            if (this.value) {
+                customAmountDiv.style.display = 'none';
+                customAmountInput.value = '';
+            } else {
+                customAmountDiv.style.display = 'block';
+            }
+            updateAmount();
+        });
+    }
+    
+    // Custom amount input
+    if (customAmountInput) {
+        customAmountInput.addEventListener('input', function() {
+            if (this.value) {
+                levyTypeSelect.value = '';
+            }
+            updateAmount();
+        });
+    }
+    
+    // Initial update
+    updateAmount();
+});
+</script>
+{% endblock %}
