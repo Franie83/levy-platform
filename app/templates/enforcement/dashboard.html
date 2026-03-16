@@ -1,33 +1,149 @@
-{% extends "base.html" %} 
- 
-{% block content %} 
-<div class="container-fluid"> 
-    <h2 class="mb-4">Enforcer Dashboard</h2> 
- 
-    <div class="alert alert-info"> 
-        <h4>Enforcement Area</h4> 
-        <p>Welcome to the enforcer dashboard. This area is under construction.</p> 
-        <hr> 
-        <div class="row"> 
-            <div class="col-md-6 mb-3"> 
-                <div class="card"> 
-                    <div class="card-body text-center"> 
-                        <i class="bi bi-search display-4"></i> 
-                        <h5>Verify Payment</h5> 
-                        <a href="{{ url_for('enforcement.verify') }}" class="btn btn-primary">Go to Verification</a> 
-                    </div> 
-                </div> 
-            </div> 
-            <div class="col-md-6 mb-3"> 
-                <div class="card"> 
-                    <div class="card-body text-center"> 
-                        <i class="bi bi-exclamation-triangle display-4"></i> 
-                        <h5>Record Violation</h5> 
-                        <a href="{{ url_for('enforcement.record_violation') }}" class="btn btn-warning">Record Violation</a> 
-                    </div> 
-                </div> 
-            </div> 
-        </div> 
-    </div> 
-</div> 
-{% endblock %} 
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Enforcer Dashboard</h2>
+    
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Verifications Today</h5>
+                    <h2 class="display-4">{{ verifications_today|default('0') }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Violations Today</h5>
+                    <h2 class="display-4">{{ violations_today|default('0') }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">Total Violations</h5>
+                    <h2 class="display-4">{{ total_violations|default('0') }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Pending Payments</h5>
+                    <h2 class="display-4">{{ pending_payments|default('0') }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('enforcement.verify') }}" class="btn btn-primary btn-lg">
+                            <i class="bi bi-search"></i> Verify Payment
+                        </a>
+                        <a href="{{ url_for('enforcement.record_violation') }}" class="btn btn-warning btn-lg">
+                            <i class="bi bi-exclamation-triangle"></i> Record Violation
+                        </a>
+                        <a href="{{ url_for('enforcement.violations') }}" class="btn btn-info btn-lg">
+                            <i class="bi bi-list-check"></i> View Violations
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Recent Verifications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for payment in recent_verifications %}
+                        <a href="{{ url_for('enforcement.verify_payment', payment_id=payment.id) }}" 
+                           class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ payment.receipt_number }}</strong>
+                                <small>₦{{ "{:,.2f}".format(payment.amount) }}</small>
+                            </div>
+                            <small class="text-muted">{{ payment.payment_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </a>
+                        {% else %}
+                        <p class="text-muted">No recent verifications</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Violations -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Recent Violations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Type</th>
+                                    <th>Entity</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for violation in recent_violations %}
+                                <tr>
+                                    <td>{{ violation.id }}</td>
+                                    <td>{{ violation.violation_type }}</td>
+                                    <td>
+                                        {% if violation.vehicle %}
+                                            Vehicle: {{ violation.vehicle.plate_number }}
+                                        {% elif violation.business %}
+                                            Business: {{ violation.business.business_name }}
+                                        {% elif violation.user %}
+                                            User: {{ violation.user.name }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ violation.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if violation.status == 'pending' else 'success' if violation.status == 'resolved' else 'secondary' }}">
+                                            {{ violation.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('enforcement.view_violation', violation_id=violation.id) }}" 
+                                           class="btn btn-sm btn-info">View</a>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center">No violations recorded</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

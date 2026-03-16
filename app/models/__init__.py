@@ -181,6 +181,11 @@ class Violation(db.Model):
     status = db.Column(db.String(20), default='pending') 
     created_at = db.Column(db.DateTime, default=datetime.utcnow) 
  
+    # Relationships - ADD THESE
+    enforcer = db.relationship('User', foreign_keys=[enforcer_id], backref='enforced_violations')
+    user = db.relationship('User', foreign_keys=[user_id], backref='user_violations')
+    business = db.relationship('Business', backref='business_violations')
+    vehicle = db.relationship('Vehicle', backref='vehicle_violations') 
 class AuditLog(db.Model): 
     __tablename__ = 'audit_logs' 
     id = db.Column(db.Integer, primary_key=True) 

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Violation Details</h2>
+        <div>
+            <a href="{{ url_for('enforcement.violations') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Violations
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Violation Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Violation ID:</th>
+                                    <td>{{ violation.id }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Type:</th>
+                                    <td><span class="badge bg-warning text-dark">{{ violation.violation_type }}</span></td>
+                                </tr>
+                                <tr>
+                                    <th>Status:</th>
+                                    <td>
+                                        <span class="badge bg-{{ 'warning' if violation.status == 'pending' else 'success' if violation.status == 'resolved' else 'secondary' }}">
+                                            {{ violation.status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Date:</th>
+                                    <td>{{ violation.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Enforcer:</th>
+                                    <td>{{ violation.enforcer.name }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Location:</th>
+                                    <td>
+                                        {% if violation.gps_coordinates %}
+                                            <a href="https://www.google.com/maps?q={{ violation.gps_coordinates }}" target="_blank">
+                                                {{ violation.gps_coordinates }}
+                                            </a>
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Description:</th>
+                                    <td>{{ violation.description }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Entity Details</h5>
+                </div>
+                <div class="card-body">
+                    {% if violation.vehicle %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Vehicle:</strong> {{ violation.vehicle.plate_number }}</p>
+                            <p><strong>Type:</strong> {{ violation.vehicle.vehicle_type_ref.name if violation.vehicle.vehicle_type_ref else 'N/A' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Owner:</strong> {{ violation.vehicle.owner.name }}</p>
+                            <p><strong>Owner NIN:</strong> {{ violation.vehicle.owner.nin }}</p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('vehicle.view', vehicle_id=violation.vehicle.vehicle_id) }}" class="btn btn-sm btn-info">
+                        View Vehicle
+                    </a>
+                    {% elif violation.business %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Business:</strong> {{ violation.business.business_name }}</p>
+                            <p><strong>Type:</strong> {{ violation.business.business_type_ref.name if violation.business.business_type_ref else 'N/A' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Owner:</strong> {{ violation.business.owner.name }}</p>
+                            <p><strong>Owner NIN:</strong> {{ violation.business.owner.nin }}</p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('business.view', business_id=violation.business.business_id) }}" class="btn btn-sm btn-info">
+                        View Business
+                    </a>
+                    {% elif violation.user %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Name:</strong> {{ violation.user.name }}</p>
+                            <p><strong>Email:</strong> {{ violation.user.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>NIN:</strong> {{ violation.user.nin }}</p>
+                            <p><strong>Phone:</strong> {{ violation.user.phone }}</p>
+                        </div>
+                    </div>
+                    <a href="{{ url_for('admin.view_user', user_id=violation.user.id) }}" class="btn btn-sm btn-info">
+                        View User
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if violation.evidence_photo %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Evidence</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{{ url_for('static', filename='uploads/violations/' + violation.evidence_photo) }}" 
+                         class="img-fluid rounded" style="max-height: 400px;">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">Update Status</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('enforcement.update_violation_status', violation_id=violation.id) }}">
+                        <div class="mb-3">
+                            <select class="form-control" name="status">
+                                <option value="pending" {% if violation.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="resolved" {% if violation.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                                <option value="rejected" {% if violation.status == 'rejected' %}selected{% endif %}>Rejected</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-warning w-100">Update Status</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('enforcement.record_violation') }}" class="btn btn-danger">
+                            <i class="bi bi-exclamation-triangle"></i> New Violation
+                        </a>
+                        <a href="{{ url_for('enforcement.verify') }}" class="btn btn-success">
+                            <i class="bi bi-search"></i> Verify Payment
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -70,18 +70,40 @@
                         </div>
                         <div class="col-md-6">
                             <strong>Payment Date:</strong>
-                            <p>{{ payment.payment_date.strftime('%d %B, %Y %H:%M') if payment.payment_date else 'N/A' }}</p>
+                            <p>
+                                {% if payment.payment_date %}
+                                    {{ payment.payment_date.strftime('%d %B, %Y %H:%M') }}
+                                {% else %}
+                                    <span class="text-muted">Not completed</span>
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
                     
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <strong>Payment Status:</strong>
-                            <p><span class="badge bg-success">{{ payment.payment_status|upper }}</span></p>
+                            <p>
+                                {% if payment.payment_status == 'success' %}
+                                    <span class="badge bg-success">Success</span>
+                                {% elif payment.payment_status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">Pending</span>
+                                {% elif payment.payment_status == 'failed' %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ payment.payment_status }}</span>
+                                {% endif %}
+                            </p>
                         </div>
                         <div class="col-md-6">
                             <strong>Verification Status:</strong>
-                            <p><span class="badge bg-info">{{ payment.verification_status|upper }}</span></p>
+                            <p>
+                                {% if payment.verification_status == 'verified' %}
+                                    <span class="badge bg-success">Verified</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Unverified</span>
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
                     
@@ -109,7 +131,7 @@
                     </div>
                 </div>
                 <div class="card-footer text-muted">
-                    <small>Generated on {{ payment.payment_date.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                    <small>Generated on {{ payment.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</small>
                 </div>
             </div>
         </div>

@@ -1,18 +1,157 @@
-{% extends "base.html" %} 
- 
-{% block content %} 
-<div class="container-fluid"> 
-    <h2 class="mb-4">Verify Payment</h2> 
- 
-    <div class="card"> 
-        <div class="card-body"> 
-            <div class="alert alert-info"> 
-                <h5>Payment Verification Coming Soon</h5> 
-                <p>This feature is under development.</p> 
-                <hr> 
-                <a href="{{ url_for('enforcement.dashboard') }}" class="btn btn-primary">Back to Dashboard</a> 
-            </div> 
-        </div> 
-    </div> 
-</div> 
-{% endblock %} 
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <h2 class="mb-4">Verify Payment</h2>
+    
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Search by:</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('enforcement.verify') }}" id="searchForm">
+                        <div class="mb-3">
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="search_type" id="receipt" value="receipt" checked>
+                                <label class="btn btn-outline-primary" for="receipt">Receipt Number</label>
+                                
+                                <input type="radio" class="btn-check" name="search_type" id="plate" value="plate">
+                                <label class="btn btn-outline-primary" for="plate">Plate Number</label>
+                                
+                                <input type="radio" class="btn-check" name="search_type" id="nin" value="nin">
+                                <label class="btn btn-outline-primary" for="nin">NIN</label>
+                                
+                                <input type="radio" class="btn-check" name="search_type" id="business" value="business">
+                                <label class="btn btn-outline-primary" for="business">Business Name</label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="search_value" class="form-label">Search Value</label>
+                            <input type="text" class="form-control form-control-lg" 
+                                   id="search_value" name="search_value" 
+                                   placeholder="Enter receipt number..." required>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-search"></i> Verify
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Quick Search Results (AJAX) -->
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Quick Search</h5>
+                </div>
+                <div class="card-body">
+                    <div id="quickResults">
+                        <p class="text-muted">Type at least 3 characters to search...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchType = document.querySelectorAll('input[name="search_type"]');
+    const searchValue = document.getElementById('search_value');
+    
+    // Update placeholder based on search type
+    function updatePlaceholder() {
+        const selected = document.querySelector('input[name="search_type"]:checked').value;
+        const placeholders = {
+            'receipt': 'Enter receipt number (e.g., RCP123ABC)',
+            'plate': 'Enter plate number (e.g., ABC123XY)',
+            'nin': 'Enter 11-digit NIN',
+            'business': 'Enter business name'
+        };
+        searchValue.placeholder = placeholders[selected];
+    }
+    
+    searchType.forEach(radio => {
+        radio.addEventListener('change', updatePlaceholder);
+    });
+    
+    // Quick search AJAX
+    let searchTimeout;
+    searchValue.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value;
+        const type = document.querySelector('input[name="search_type"]:checked').value;
+        
+        if (query.length >= 3) {
+            searchTimeout = setTimeout(() => {
+                fetch(`/enforcement/api/search?q=${encodeURIComponent(query)}&type=${type}`)
+                    .then(response => response.json())
+                    .then(data => displayResults(data));
+            }, 300);
+        }
+    });
+    
+    function displayResults(data) {
+        const resultsDiv = document.getElementById('quickResults');
+        let html = '';
+        
+        if (data.users && data.users.length > 0) {
+            html += '<h6>Users:</h6><div class="list-group mb-3">';
+            data.users.forEach(user => {
+                html += `<a href="/enforcement/record-violation?user_id=${user.id}" class="list-group-item list-group-item-action">
+                            <strong>${user.name}</strong> - NIN: ${user.nin}
+                         </a>`;
+            });
+            html += '</div>';
+        }
+        
+        if (data.businesses && data.businesses.length > 0) {
+            html += '<h6>Businesses:</h6><div class="list-group mb-3">';
+            data.businesses.forEach(business => {
+                html += `<a href="/enforcement/record-violation?business_id=${business.id}" class="list-group-item list-group-item-action">
+                            <strong>${business.business_name}</strong><br>
+                            <small>Owner: ${business.owner_name}</small>
+                         </a>`;
+            });
+            html += '</div>';
+        }
+        
+        if (data.vehicles && data.vehicles.length > 0) {
+            html += '<h6>Vehicles:</h6><div class="list-group mb-3">';
+            data.vehicles.forEach(vehicle => {
+                html += `<a href="/enforcement/record-violation?vehicle_id=${vehicle.id}" class="list-group-item list-group-item-action">
+                            <strong>${vehicle.plate_number}</strong><br>
+                            <small>Owner: ${vehicle.owner_name}</small>
+                         </a>`;
+            });
+            html += '</div>';
+        }
+        
+        if (data.payments && data.payments.length > 0) {
+            html += '<h6>Payments:</h6><div class="list-group mb-3">';
+            data.payments.forEach(payment => {
+                html += `<a href="/enforcement/verify-payment/${payment.id}" class="list-group-item list-group-item-action">
+                            <strong>Receipt: ${payment.receipt_number}</strong><br>
+                            <small>Amount: ₦${payment.amount.toLocaleString()} | Status: ${payment.status}</small>
+                         </a>`;
+            });
+            html += '</div>';
+        }
+        
+        if (html === '') {
+            html = '<p class="text-muted">No results found</p>';
+        }
+        
+        resultsDiv.innerHTML = html;
+    }
+    
+    // Initial placeholder
+    updatePlaceholder();
+});
+</script>
+{% endblock %}

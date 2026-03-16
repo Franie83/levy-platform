@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Payment Verification</h2>
+        <div>
+            <a href="{{ url_for('enforcement.verify') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Search
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header bg-{{ 'success' if payment.verification_status == 'verified' else 'warning' }} text-white">
+                    <h5 class="mb-0">Payment Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Reference:</th>
+                                    <td><code>{{ payment.payment_reference }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Receipt:</th>
+                                    <td><code>{{ payment.receipt_number }}</code></td>
+                                </tr>
+                                <tr>
+                                    <th>Amount:</th>
+                                    <td><h4 class="text-primary">₦{{ "{:,.2f}".format(payment.amount) }}</h4></td>
+                                </tr>
+                                <tr>
+                                    <th>Levy Type:</th>
+                                    <td>{{ payment.levy_type }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th width="40%">Payment Status:</th>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if payment.payment_status == 'success' else 'warning' }}">
+                                            {{ payment.payment_status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Verification:</th>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if payment.verification_status == 'verified' else 'secondary' }}">
+                                            {{ payment.verification_status }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Payment Date:</th>
+                                    <td>{{ payment.payment_date.strftime('%Y-%m-%d %H:%M') if payment.payment_date else 'N/A' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Verified By:</th>
+                                    <td>{{ payment.verifier.name if payment.verifier else 'Not verified' }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Entity Information</h5>
+                </div>
+                <div class="card-body">
+                    {% if payment.business %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Business:</strong> {{ payment.business.business_name }}</p>
+                            <p><strong>Business ID:</strong> {{ payment.business.business_id }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Owner:</strong> {{ payment.business.owner.name }}</p>
+                            <p><strong>Owner NIN:</strong> {{ payment.business.owner.nin }}</p>
+                        </div>
+                    </div>
+                    {% elif payment.vehicle %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Vehicle:</strong> {{ payment.vehicle.plate_number }}</p>
+                            <p><strong>Vehicle ID:</strong> {{ payment.vehicle.vehicle_id }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Owner:</strong> {{ payment.vehicle.owner.name }}</p>
+                            <p><strong>Owner NIN:</strong> {{ payment.vehicle.owner.nin }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if payment.receipt %}
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Receipt QR Code</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{{ url_for('static', filename='uploads/qrcodes/' + payment.receipt.qr_code) }}" 
+                         style="width: 200px; height: 200px;" class="img-thumbnail">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Actions</h5>
+                </div>
+                <div class="card-body">
+                    {% if not payment.verified_by and payment.payment_status == 'success' %}
+                    <a href="{{ url_for('enforcement.verify_payment', payment_id=payment.id) }}" 
+                       class="btn btn-success w-100 mb-2">
+                        <i class="bi bi-check-circle"></i> Mark as Verified
+                    </a>
+                    {% endif %}
+                    
+                    <a href="{{ url_for('enforcement.record_violation') }}?{% if payment.business %}business_id={{ payment.business.id }}{% elif payment.vehicle %}vehicle_id={{ payment.vehicle.id }}{% else %}user_id={{ payment.user_id }}{% endif %}" 
+                       class="btn btn-danger w-100 mb-2">
+                        <i class="bi bi-exclamation-triangle"></i> Record Violation
+                    </a>
+                    
+                    <a href="{{ url_for('payment.receipt', payment_reference=payment.payment_reference) }}" 
+                       class="btn btn-info w-100" target="_blank">
+                        <i class="bi bi-receipt"></i> View Full Receipt
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">Payer Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ payment.payer.name }}</p>
+                    <p><strong>NIN:</strong> {{ payment.payer.nin }}</p>
+                    <p><strong>Phone:</strong> {{ payment.payer.phone }}</p>
+                    <p><strong>Category:</strong> {{ payment.payer.category or 'N/A' }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
