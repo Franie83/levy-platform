@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            {% if valid %}
+            <div class="alert alert-success text-center">
+                <i class="bi bi-check-circle-fill" style="font-size: 3rem;"></i>
+                <h3 class="mt-3">Payment Valid for Today!</h3>
+                <p>{{ entity_type|title }} "{{ entity_name }}" has a valid payment for {{ current_date.strftime('%d %B, %Y') }}</p>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">Payment Receipt</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Receipt Number:</strong></p>
+                            <p><code>{{ payment.receipt_number }}</code></p>
+                            
+                            <p><strong>Payer:</strong></p>
+                            <p>{{ payment.payer.name }}</p>
+                            
+                            <p><strong>NIN:</strong></p>
+                            <p>{{ payment.payer.nin }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Amount:</strong></p>
+                            <h4 class="text-primary">₦{{ "{:,.2f}".format(payment.amount) }}</h4>
+                            
+                            <p><strong>Payment Date:</strong></p>
+                            <p>{{ payment.payment_date.strftime('%d %B, %Y %H:%M') }}</p>
+                            
+                            <p><strong>Entity:</strong></p>
+                            <p>
+                                {% if entity_type == 'business' %}
+                                    Business: {{ entity.business_name }}
+                                {% else %}
+                                    Vehicle: {{ entity.plate_number }}
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <a href="{{ url_for('enforcement.scanner') }}" class="btn btn-primary">
+                            <i class="bi bi-qr-code-scan"></i> Scan Another
+                        </a>
+                        <button onclick="window.print()" class="btn btn-info">
+                            <i class="bi bi-printer"></i> Print Receipt
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            {% else %}
+            <div class="alert alert-danger text-center">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem;"></i>
+                <h3 class="mt-3">No Valid Payment Found!</h3>
+                <p>{{ entity_type|title }} "{{ entity_name }}" has not made any payment for today ({{ current_date.strftime('%d %B, %Y') }})</p>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h5 class="mb-0">Record Violation</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('enforcement.record_violation_from_entity') }}">
+                        <input type="hidden" name="entity_type" value="{{ entity_type }}">
+                        <input type="hidden" name="entity_id" value="{{ entity.id }}">
+                        
+                        <div class="alert alert-info">
+                            <p><strong>Entity Information:</strong></p>
+                            <p><strong>Type:</strong> {{ entity_type|title }}</p>
+                            <p><strong>Name:</strong> {{ entity_name }}</p>
+                            <p><strong>Owner:</strong> {{ entity.owner.name }}</p>
+                            <p><strong>Owner NIN:</strong> {{ entity.owner.nin }}</p>
+                            <p><strong>Owner Phone:</strong> {{ entity.owner.phone }}</p>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="violation_type" class="form-label">Violation Type *</label>
+                            <select class="form-control" id="violation_type" name="violation_type" required>
+                                <option value="">Select violation type</option>
+                                <option value="No Payment Today" selected>No Payment Today</option>
+                                <option value="Operating Without License">Operating Without License</option>
+                                <option value="Invalid Registration">Invalid Registration</option>
+                                <option value="Other Violation">Other Violation</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description *</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required
+                                      placeholder="Describe the violation...">No valid payment found for {{ current_date.strftime('%d %B, %Y') }}. Entity: {{ entity_name }} ({{ entity_type }})</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="gps_coordinates" class="form-label">Location</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="gps_coordinates" name="gps_coordinates" 
+                                       placeholder="Click to get location" readonly>
+                                <button type="button" class="btn btn-secondary" onclick="getLocation()">
+                                    <i class="bi bi-geo-alt"></i> Get Location
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Warning:</strong> Recording this violation will automatically suspend the user's account.
+                        </div>
+                        
+                        <button type="submit" class="btn btn-danger btn-lg w-100">
+                            <i class="bi bi-exclamation-octagon"></i> Record Violation & Suspend User
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+function getLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            document.getElementById('gps_coordinates').value = 
+                position.coords.latitude + ',' + position.coords.longitude;
+            showToast('Location captured successfully!', 'success');
+        }, function(error) {
+            let errorMessage = 'Unable to get location. ';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage += 'Please enable location permissions.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage += 'Location information unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage += 'Location request timed out.';
+                    break;
+                default:
+                    errorMessage += 'Please enter location manually.';
+            }
+            showToast(errorMessage, 'danger');
+        });
+    } else {
+        showToast('Geolocation is not supported by this browser.', 'warning');
+    }
+}
+
+function showToast(message, type) {
+    if (window.showToast) {
+        window.showToast(message, type);
+    } else {
+        alert(message);
+    }
+}
+</script>
+{% endblock %}

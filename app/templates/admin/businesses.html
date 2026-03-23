@@ -8,6 +8,9 @@
             <a href="{{ url_for('admin.register_business') }}" class="btn btn-success me-2">
                 <i class="bi bi-plus-circle"></i> Register New Business
             </a>
+            <a href="{{ url_for('admin.generate_all_business_qrs') }}" class="btn btn-info me-2">
+                <i class="bi bi-qr-code"></i> Generate All QR Codes
+            </a>
             <span class="badge bg-primary">Total: {{ businesses|length }}</span>
         </div>
     </div>
@@ -84,7 +87,7 @@
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
                     <thead class="table-dark">
-                        <tr>
+                        32
                             <th>ID</th>
                             <th>Business ID</th>
                             <th>Business Name</th>
@@ -92,17 +95,17 @@
                             <th>Type</th>
                             <th>Amount</th>
                             <th>Registration</th>
+                            <th>QR Code</th>
                             <th>Status</th>
                             <th>Registered</th>
                             <th>Actions</th>
-                        </tr>
-                    </thead>
+                        </thead>
                     <tbody>
                         {% for business in businesses %}
                         <tr>
                             <td>{{ business.id }}</td>
                             <td><code>{{ business.business_id }}</code></td>
-                            <td>{{ business.business_name }}</td>
+                            <td><strong>{{ business.business_name }}</strong></td>
                             <td>{{ business.owner.name }}</td>
                             <td>
                                 {% if business.business_type_ref %}
@@ -119,6 +122,30 @@
                                 {% endif %}
                             </td>
                             <td>{{ business.registration_number or 'N/A' }}</td>
+                            <td>
+                                {% if business.qr_code %}
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('static', filename='uploads/qrcodes/businesses/' + business.qr_code) }}" 
+                                           target="_blank" 
+                                           class="btn btn-info" 
+                                           title="View QR Code">
+                                            <i class="bi bi-qr-code"></i>
+                                        </a>
+                                        <a href="{{ url_for('static', filename='uploads/qrcodes/businesses/' + business.qr_code) }}" 
+                                           download="business_qr_{{ business.registration_number or business.id }}.png" 
+                                           class="btn btn-success" 
+                                           title="Download QR Code">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">No QR</span>
+                                    <a href="{{ url_for('admin.generate_business_qr', business_id=business.id) }}" 
+                                       class="btn btn-sm btn-warning" title="Generate QR Code">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </a>
+                                {% endif %}
+                            </td>
                             <td>
                                 <span class="badge bg-{{ 'success' if business.status == 'active' else 'danger' }}">
                                     {{ business.status }}

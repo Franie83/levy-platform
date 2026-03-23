@@ -2,77 +2,58 @@
 
 {% block content %}
 <div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Payments for Vehicle: {{ vehicle.plate_number }}</h2>
-        <a href="{{ url_for('enforcement.verify') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Back to Search
-        </a>
-    </div>
-
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0">Vehicle Details</h5>
-                </div>
-                <div class="card-body">
-                    <p><strong>Plate Number:</strong> {{ vehicle.plate_number }}</p>
-                    <p><strong>Type:</strong> {{ vehicle.vehicle_type_ref.name if vehicle.vehicle_type_ref else 'N/A' }}</p>
-                    <p><strong>Owner:</strong> {{ vehicle.owner.name }}</p>
-                    <p><strong>Owner NIN:</strong> {{ vehicle.owner.nin }}</p>
-                </div>
-            </div>
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                <i class="bi bi-truck"></i> Vehicle Payments: {{ vehicle.plate_number }}
+            </h4>
         </div>
-
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Payment History</h5>
-                </div>
-                <div class="card-body">
-                    {% if payments %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Receipt</th>
-                                    <th>Amount</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Verification</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for payment in payments %}
-                                <tr>
-                                    <td><code>{{ payment.receipt_number }}</code></td>
-                                    <td>₦{{ "{:,.2f}".format(payment.amount) }}</td>
-                                    <td>{{ payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else 'N/A' }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'success' if payment.payment_status == 'success' else 'warning' }}">
-                                            {{ payment.payment_status }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-{{ 'success' if payment.verification_status == 'verified' else 'secondary' }}">
-                                            {{ payment.verification_status }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('enforcement.verify_payment', payment_id=payment.id) }}" 
-                                           class="btn btn-sm btn-info">Verify</a>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <p class="text-muted">No successful payments found for this vehicle.</p>
-                    {% endif %}
-                </div>
+        <div class="card-body">
+            {% if payments %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Receipt Number</th>
+                            <th>Amount</th>
+                            <th>Payment Date</th>
+                            <th>Status</th>
+                            <th>Verification</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td><code>{{ payment.receipt_number }}</code></td>
+                            <td>₦{{ "{:,.2f}".format(payment.amount) }}</td>
+                            <td>{{ payment.payment_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <span class="badge bg-success">Success</span>
+                            </td>
+                            <td>
+                                {% if payment.verification_status == 'verified' %}
+                                    <span class="badge bg-info">Verified</span>
+                                {% else %}
+                                    <span class="badge bg-warning">Unverified</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('enforcement.verify_payment', payment_id=payment.id) }}" 
+                                   class="btn btn-sm btn-info">View</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            {% else %}
+            <p class="text-muted">No payments found for this vehicle.</p>
+            {% endif %}
+            
+            <a href="{{ url_for('enforcement.verify') }}" class="btn btn-secondary mt-3">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
         </div>
     </div>
 </div>

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">My Profile</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="avatar-circle bg-primary text-white mx-auto mb-3" style="width: 100px; height: 100px; font-size: 40px; display: flex; align-items: center; justify-content: center;">
+                        {{ user.name[:2]|upper }}
+                    </div>
+                    <h5>{{ user.name }}</h5>
+                    <p class="text-muted">
+                        <i class="bi bi-credit-card"></i> NIN: {{ user.nin }}<br>
+                        <i class="bi bi-envelope"></i> {{ user.email }}<br>
+                        <i class="bi bi-phone"></i> {{ user.phone }}
+                    </p>
+                    <p>
+                        <span class="badge bg-{{ 'success' if user.status == 'active' else 'danger' }}">
+                            {{ user.status|upper }}
+                        </span>
+                        <span class="badge bg-info">{{ user.category }}</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">My QR Code</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if user.qr_code %}
+                    <div class="qr-container p-3 bg-light rounded">
+                        <img src="{{ url_for('static', filename='uploads/qrcodes/users/' + user.qr_code) }}" 
+                             alt="QR Code" 
+                             style="max-width: 200px; width: 100%; height: auto;"
+                             class="img-fluid border p-2 bg-white">
+                    </div>
+                    <p class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> 
+                            Enforcers can scan this QR code to verify your payments
+                        </small>
+                    </p>
+                    <a href="{{ url_for('main.my_qr_code') }}" class="btn btn-primary">
+                        <i class="bi bi-qr-code"></i> View Full Size QR Code
+                    </a>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Generating your QR code...
+                    </div>
+                    <meta http-equiv="refresh" content="2">
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">My {{ 'Businesses' if businesses else 'Vehicles' if vehicles else 'Information' }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if businesses %}
+                    <div class="list-group">
+                        {% for business in businesses %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ business.business_name }}</h6>
+                                    <small class="text-muted">Reg: {{ business.registration_number }}</small>
+                                </div>
+                                <span class="badge bg-success">Active</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% elif vehicles %}
+                    <div class="list-group">
+                        {% for vehicle in vehicles %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ vehicle.plate_number }}</h6>
+                                    <small class="text-muted">{{ vehicle.brand }} {{ vehicle.model }}</small>
+                                </div>
+                                <span class="badge bg-success">Active</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">No businesses or vehicles registered yet.</p>
+                    <div class="text-center">
+                        <a href="{{ url_for('admin.register_business') }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-building-add"></i> Register Business
+                        </a>
+                        <a href="{{ url_for('admin.register_vehicle') }}" class="btn btn-sm btn-success">
+                            <i class="bi bi-truck"></i> Register Vehicle
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+</style>
+{% endblock %}

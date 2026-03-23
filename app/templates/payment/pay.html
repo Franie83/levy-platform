@@ -68,7 +68,7 @@
                                         </option>
                                         {% else %}
                                         <option value="{{ business.id }}" data-amount="0">
-                                            {{ business.business_name }} (No type assigned)
+                                            {{ business.business_name }} (No business type assigned)
                                         </option>
                                         {% endif %}
                                     {% endfor %}
@@ -108,7 +108,7 @@
                                         </option>
                                         {% else %}
                                         <option value="{{ vehicle.id }}" data-amount="0">
-                                            {{ vehicle.plate_number }} (No type assigned)
+                                            {{ vehicle.plate_number }} (No vehicle type assigned)
                                         </option>
                                         {% endif %}
                                     {% endfor %}
@@ -154,9 +154,9 @@
                                         {% else %}
                                         <option value="{{ business.id }}" data-amount="0" data-owner="{{ business.owner.name }}">
                                             {% if is_admin %}
-                                                {{ business.business_name }} (Owner: {{ business.owner.name }}) - No type assigned
+                                                {{ business.business_name }} (Owner: {{ business.owner.name }}) - No business type assigned
                                             {% else %}
-                                                {{ business.business_name }} (No type assigned)
+                                                {{ business.business_name }} (No business type assigned)
                                             {% endif %}
                                         </option>
                                         {% endif %}
@@ -189,9 +189,9 @@
                                         {% else %}
                                         <option value="{{ vehicle.id }}" data-amount="0" data-owner="{{ vehicle.owner.name }}">
                                             {% if is_admin %}
-                                                {{ vehicle.plate_number }} (Owner: {{ vehicle.owner.name }}) - No type assigned
+                                                {{ vehicle.plate_number }} (Owner: {{ vehicle.owner.name }}) - No vehicle type assigned
                                             {% else %}
-                                                {{ vehicle.plate_number }} (No type assigned)
+                                                {{ vehicle.plate_number }} (No vehicle type assigned)
                                             {% endif %}
                                         </option>
                                         {% endif %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block auth_content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="bi bi-exclamation-octagon"></i> Account Suspended
+                    </h3>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-shield-slash" style="font-size: 4rem; color: #dc3545;"></i>
+                    </div>
+                    
+                    <h4 class="mb-3">Your account has been suspended</h4>
+                    
+                    {% if reason %}
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Reason:</strong> {{ reason }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if suspended_at %}
+                    <p class="text-muted">
+                        <small>Suspended on: {{ suspended_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </p>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <p>To resolve this issue, please contact the administrator:</p>
+                    
+                    <div class="card bg-light mb-3">
+                        <div class="card-body">
+                            <p class="mb-0">
+                                <i class="bi bi-envelope"></i> <strong>Email:</strong> support@levyplatform.com<br>
+                                <i class="bi bi-telephone"></i> <strong>Phone:</strong> +234 123 456 7890
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                        <i class="bi bi-arrow-left"></i> Back to Login
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 15px;
+    overflow: hidden;
+}
+.card-header {
+    padding: 20px;
+}
+.btn-primary {
+    padding: 10px 30px;
+}
+</style>
+{% endblock %}

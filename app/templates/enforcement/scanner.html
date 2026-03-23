@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-qr-code-scan"></i> QR Code Scanner
+                    </h4>
+                    <button type="button" class="btn btn-light btn-sm" onclick="closeScanner()">
+                        <i class="bi bi-x-lg"></i> Close
+                    </button>
+                </div>
+                <div class="card-body text-center">
+                    <!-- Upload Section -->
+                    <div class="mb-4">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <i class="bi bi-qr-code" style="font-size: 3rem;"></i>
+                                <h5 class="mt-2">Upload QR Code Image</h5>
+                                <p class="text-muted">Select a QR code image from your device</p>
+                                
+                                <div class="upload-area" id="uploadArea" 
+                                     style="border: 2px dashed #ccc; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer;">
+                                    <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #6c757d;"></i>
+                                    <p class="mt-2">Click to select image</p>
+                                    <small>PNG, JPG, GIF</small>
+                                    <input type="file" id="qrFileInput" accept="image/*" style="display: none;">
+                                </div>
+                                
+                                <div id="previewArea" style="display: none;" class="mt-3">
+                                    <img id="previewImage" style="max-width: 200px; border: 1px solid #ddd; padding: 5px;">
+                                    <div class="mt-2">
+                                        <button class="btn btn-primary" id="scanBtn">
+                                            <i class="bi bi-search"></i> Scan QR Code
+                                        </button>
+                                        <button class="btn btn-secondary" onclick="clearImage()">
+                                            <i class="bi bi-x-circle"></i> Clear
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div id="resultArea" style="display: none;" class="mt-3">
+                                    <div id="resultMessage" class="alert"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Manual Entry -->
+                    <div>
+                        <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#manualEntry">
+                            <i class="bi bi-keyboard"></i> Enter Receipt Number Manually
+                        </button>
+                        <div class="collapse mt-3" id="manualEntry">
+                            <div class="card card-body">
+                                <form action="{{ url_for('enforcement.verify_receipt') }}" method="GET">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="receipt" 
+                                               placeholder="Enter receipt number (e.g., RCP0DD56BE604C6)" required>
+                                        <button type="submit" class="btn btn-primary">Verify</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Instructions -->
+                    <div class="mt-4 text-start">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> 
+                            <strong>How to use:</strong><br>
+                            1. Click the upload area to select a QR code image<br>
+                            2. Click "Scan QR Code" to process the image<br>
+                            3. You will be redirected to the payment verification page
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Html5 Qrcode library -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<style>
+    .upload-area {
+        transition: all 0.3s ease;
+    }
+    .upload-area:hover {
+        border-color: #007bff !important;
+        background-color: #f8f9fa;
+    }
+    .scanner-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 9999;
+        display: none;
+        justify-content: center;
+        align-items: center;
+    }
+    .scanner-loading .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+</style>
+
+<div class="scanner-loading" id="loadingSpinner">
+    <div class="text-center">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-white mt-2">Processing QR code...</p>
+    </div>
+</div>
+
+<script>
+let selectedFile = null;
+let html5QrCode = null;
+
+// Upload area click
+document.getElementById('uploadArea').addEventListener('click', () => {
+    document.getElementById('qrFileInput').click();
+});
+
+// File selection
+document.getElementById('qrFileInput').addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        selectedFile = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('previewImage').src = e.target.result;
+            document.getElementById('previewArea').style.display = 'block';
+            document.getElementById('uploadArea').style.display = 'none';
+        };
+        reader.readAsDataURL(selectedFile);
+    }
+});
+
+function clearImage() {
+    selectedFile = null;
+    document.getElementById('qrFileInput').value = '';
+    document.getElementById('previewArea').style.display = 'none';
+    document.getElementById('uploadArea').style.display = 'block';
+    document.getElementById('resultArea').style.display = 'none';
+}
+
+function showLoading() {
+    document.getElementById('loadingSpinner').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.getElementById('loadingSpinner').style.display = 'none';
+}
+
+// Scan QR code using html5-qrcode library
+document.getElementById('scanBtn').addEventListener('click', async () => {
+    if (!selectedFile) {
+        alert('Please select an image first');
+        return;
+    }
+    
+    const resultArea = document.getElementById('resultArea');
+    const resultMessage = document.getElementById('resultMessage');
+    
+    resultArea.style.display = 'block';
+    resultMessage.innerHTML = '<i class="bi bi-hourglass-split"></i> Processing image...';
+    resultMessage.className = 'alert alert-info';
+    
+    showLoading();
+    
+    try {
+        // Create a temporary scanner element
+        const tempDiv = document.createElement('div');
+        tempDiv.id = 'temp-scanner';
+        tempDiv.style.display = 'none';
+        document.body.appendChild(tempDiv);
+        
+        // Initialize html5-qrcode scanner
+        const scanner = new Html5Qrcode("temp-scanner");
+        
+        // Scan the file
+        const result = await scanner.scanFile(selectedFile, true);
+        
+        if (result) {
+            resultMessage.innerHTML = '<i class="bi bi-check-circle"></i> QR Code detected! Redirecting...';
+            resultMessage.className = 'alert alert-success';
+            
+            // Clean up
+            await scanner.clear();
+            document.body.removeChild(tempDiv);
+            
+            setTimeout(() => {
+                window.location.href = "{{ url_for('enforcement.verify_receipt') }}?receipt=" + encodeURIComponent(result);
+            }, 1000);
+        } else {
+            resultMessage.innerHTML = '<i class="bi bi-exclamation-triangle"></i> No QR code found in the image.';
+            resultMessage.className = 'alert alert-danger';
+            hideLoading();
+            await scanner.clear();
+            document.body.removeChild(tempDiv);
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        resultMessage.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Error: ' + error.message;
+        resultMessage.className = 'alert alert-danger';
+        hideLoading();
+        
+        // Clean up temp element
+        const tempDiv = document.getElementById('temp-scanner');
+        if (tempDiv) {
+            document.body.removeChild(tempDiv);
+        }
+    }
+});
+
+function closeScanner() {
+    window.location.href = "{{ url_for('enforcement.dashboard') }}";
+}
+</script>
+{% endblock %}

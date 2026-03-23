@@ -2,123 +2,120 @@
 
 {% block content %}
 <div class="container-fluid">
-    <h2 class="mb-4">Record Violation</h2>
-    
     <div class="row">
         <div class="col-md-8 mx-auto">
             <div class="card">
                 <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">Violation Details</h5>
+                    <h4 class="mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> Record Violation
+                    </h4>
                 </div>
                 <div class="card-body">
-                    {% if user or business or vehicle %}
-                    <div class="alert alert-info">
-                        <h6>Recording violation for:</h6>
-                        {% if user %}
-                            <p><strong>User:</strong> {{ user.name }} (NIN: {{ user.nin }})</p>
-                            <input type="hidden" id="prefill_user_id" value="{{ user.id }}">
-                        {% endif %}
-                        {% if business %}
-                            <p><strong>Business:</strong> {{ business.business_name }}</p>
-                            <input type="hidden" id="prefill_business_id" value="{{ business.id }}">
-                        {% endif %}
-                        {% if vehicle %}
-                            <p><strong>Vehicle:</strong> {{ vehicle.plate_number }}</p>
-                            <input type="hidden" id="prefill_vehicle_id" value="{{ vehicle.id }}">
-                        {% endif %}
-                    </div>
-                    {% endif %}
-
-                    <form method="POST" action="{{ url_for('enforcement.record_violation') }}" enctype="multipart/form-data" id="violationForm">
-                        <!-- Entity Selection -->
-                        <div class="mb-3">
-                            <label class="form-label">Entity Type *</label>
-                            <div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="entity_type" id="entity_user" value="user" {% if user %}checked{% endif %}>
-                                    <label class="form-check-label" for="entity_user">User</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="entity_type" id="entity_business" value="business" {% if business %}checked{% endif %}>
-                                    <label class="form-check-label" for="entity_business">Business</label>
-                                </div>
-                                <div class="form-check form-check-inline">
-                                    <input class="form-check-input" type="radio" name="entity_type" id="entity_vehicle" value="vehicle" {% if vehicle %}checked{% endif %}>
-                                    <label class="form-check-label" for="entity_vehicle">Vehicle</label>
+                    <form method="POST" enctype="multipart/form-data" id="violationForm">
+                        <!-- Entity Type Selection -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Entity Type *</label>
+                            <div class="btn-group w-100" role="group">
+                                <input type="radio" class="btn-check" name="entity_type" id="entity_user" value="user" 
+                                       {% if user %}checked{% endif %} autocomplete="off">
+                                <label class="btn btn-outline-primary" for="entity_user">
+                                    <i class="bi bi-person"></i> User
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="entity_type" id="entity_business" value="business" 
+                                       {% if business %}checked{% endif %} autocomplete="off">
+                                <label class="btn btn-outline-primary" for="entity_business">
+                                    <i class="bi bi-building"></i> Business
+                                </label>
+                                
+                                <input type="radio" class="btn-check" name="entity_type" id="entity_vehicle" value="vehicle" 
+                                       {% if vehicle %}checked{% endif %} autocomplete="off">
+                                <label class="btn btn-outline-primary" for="entity_vehicle">
+                                    <i class="bi bi-truck"></i> Vehicle
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Search Section -->
+                        <div id="searchSection" class="mb-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <label class="form-label fw-bold">Search Entity</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="searchInput" 
+                                               placeholder="Search by NIN, Plate Number, Business Name, or Registration Number...">
+                                        <button type="button" class="btn btn-primary" onclick="searchEntity()">
+                                            <i class="bi bi-search"></i> Search
+                                        </button>
+                                    </div>
+                                    <div id="searchResults" class="mt-3" style="display: none;"></div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Entity Selection Dropdowns -->
-                        <div class="mb-3" id="user_select" style="display: {% if user %}block{% else %}none{% endif %};">
-                            <label for="user_id" class="form-label">Select User</label>
-                            <select class="form-control" id="user_id" name="entity_id">
-                                <option value="">Select User</option>
-                                {% for u in users %}
-                                <option value="{{ u.id }}" {% if user and u.id == user.id %}selected{% endif %}>
-                                    {{ u.name }} ({{ u.nin }}) - {{ u.role }}
-                                </option>
-                                {% endfor %}
-                            </select>
+                        
+                        <!-- Selected Entity Display -->
+                        <div id="selectedEntity" class="mb-4">
+                            {% if user %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-person-circle"></i>
+                                <strong>Selected User:</strong> {{ user.name }} (NIN: {{ user.nin }})
+                                <input type="hidden" name="entity_id" value="{{ user.id }}">
+                            </div>
+                            {% elif business %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-building"></i>
+                                <strong>Selected Business:</strong> {{ business.business_name }}
+                                <br><small>Registration: {{ business.registration_number }}</small>
+                                <input type="hidden" name="entity_id" value="{{ business.id }}">
+                            </div>
+                            {% elif vehicle %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-truck"></i>
+                                <strong>Selected Vehicle:</strong> {{ vehicle.plate_number }}
+                                <br><small>Owner: {{ vehicle.owner.name if vehicle.owner else 'Unknown' }}</small>
+                                <input type="hidden" name="entity_id" value="{{ vehicle.id }}">
+                            </div>
+                            {% else %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-info-circle"></i>
+                                No entity selected. Use the search above to find a user, business, or vehicle.
+                            </div>
+                            <input type="hidden" name="entity_id" value="">
+                            {% endif %}
                         </div>
-
-                        <div class="mb-3" id="business_select" style="display: {% if business %}block{% else %}none{% endif %};">
-                            <label for="business_id" class="form-label">Select Business</label>
-                            <select class="form-control" id="business_id" name="entity_id">
-                                <option value="">Select Business</option>
-                                {% for b in businesses %}
-                                <option value="{{ b.id }}" {% if business and b.id == business.id %}selected{% endif %}>
-                                    {{ b.business_name }} (Owner: {{ b.owner.name }})
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
-                        <div class="mb-3" id="vehicle_select" style="display: {% if vehicle %}block{% else %}none{% endif %};">
-                            <label for="vehicle_id" class="form-label">Select Vehicle</label>
-                            <select class="form-control" id="vehicle_id" name="entity_id">
-                                <option value="">Select Vehicle</option>
-                                {% for v in vehicles %}
-                                <option value="{{ v.id }}" {% if vehicle and v.id == vehicle.id %}selected{% endif %}>
-                                    {{ v.plate_number }} (Owner: {{ v.owner.name }})
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-
+                        
                         <!-- Violation Type -->
                         <div class="mb-3">
-                            <label for="violation_type" class="form-label">Violation Type *</label>
+                            <label for="violation_type" class="form-label fw-bold">Violation Type *</label>
                             <select class="form-control" id="violation_type" name="violation_type" required>
                                 <option value="">Select violation type</option>
-                                <option value="No Payment">No Payment/Receipt</option>
+                                <option value="No Payment Today">No Payment Today</option>
                                 <option value="Expired Payment">Expired Payment</option>
                                 <option value="Invalid Receipt">Invalid Receipt</option>
-                                <option value="Unregistered Vehicle">Unregistered Vehicle</option>
-                                <option value="Unregistered Business">Unregistered Business</option>
-                                <option value="False Document">False Document</option>
-                                <option value="License Violation">License Violation</option>
+                                <option value="Unregistered Vehicle/Business">Unregistered Vehicle/Business</option>
+                                <option value="Operating Without License">Operating Without License</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
-
+                        
                         <!-- Description -->
                         <div class="mb-3">
-                            <label for="description" class="form-label">Description *</label>
-                            <textarea class="form-control" id="description" name="description" rows="4" required 
+                            <label for="description" class="form-label fw-bold">Description *</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required
                                       placeholder="Provide detailed description of the violation..."></textarea>
                         </div>
-
+                        
                         <!-- Evidence Photo -->
                         <div class="mb-3">
-                            <label for="evidence_photo" class="form-label">Evidence Photo</label>
-                            <input type="file" class="form-control" id="evidence_photo" name="evidence_photo" accept="image/*">
+                            <label for="evidence_photo" class="form-label fw-bold">Evidence Photo</label>
+                            <input type="file" class="form-control" id="evidence_photo" name="evidence_photo" 
+                                   accept="image/*">
                             <small class="text-muted">Upload photo evidence (optional but recommended)</small>
                         </div>
-
-                        <!-- GPS Coordinates -->
+                        
+                        <!-- Location -->
                         <div class="mb-3">
-                            <label for="gps_coordinates" class="form-label">Location</label>
+                            <label for="gps_coordinates" class="form-label fw-bold">Location</label>
                             <div class="input-group">
                                 <input type="text" class="form-control" id="gps_coordinates" name="gps_coordinates" 
                                        placeholder="Click 'Get Location' to capture current position" readonly>
@@ -127,13 +124,16 @@
                                 </button>
                             </div>
                         </div>
-
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-danger btn-lg">
-                                <i class="bi bi-exclamation-octagon"></i> Record Violation
-                            </button>
-                            <a href="{{ url_for('enforcement.dashboard') }}" class="btn btn-secondary">Cancel</a>
+                        
+                        <!-- Submit Button -->
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Warning:</strong> Recording a "No Payment Today" or "Expired Payment" violation will automatically suspend the user.
                         </div>
+                        
+                        <button type="submit" class="btn btn-danger btn-lg w-100">
+                            <i class="bi bi-exclamation-octagon"></i> Record Violation
+                        </button>
                     </form>
                 </div>
             </div>
@@ -142,56 +142,200 @@
 </div>
 
 <script>
-// Toggle entity selection dropdowns
-document.querySelectorAll('input[name="entity_type"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-        document.getElementById('user_select').style.display = 'none';
-        document.getElementById('business_select').style.display = 'none';
-        document.getElementById('vehicle_select').style.display = 'none';
-        
-        if (this.value === 'user') {
-            document.getElementById('user_select').style.display = 'block';
-        } else if (this.value === 'business') {
-            document.getElementById('business_select').style.display = 'block';
-        } else if (this.value === 'vehicle') {
-            document.getElementById('vehicle_select').style.display = 'block';
+function searchEntity() {
+    const query = document.getElementById('searchInput').value.trim();
+    const entityType = document.querySelector('input[name="entity_type"]:checked').value;
+    
+    if (query.length < 2) {
+        alert('Please enter at least 2 characters to search');
+        return;
+    }
+    
+    // Show loading
+    const resultsDiv = document.getElementById('searchResults');
+    resultsDiv.innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm"></div> Searching...</div>';
+    resultsDiv.style.display = 'block';
+    
+    // Map entity type to API endpoint
+    let apiType = entityType + 's';
+    if (entityType === 'user') apiType = 'users';
+    if (entityType === 'business') apiType = 'businesses';
+    if (entityType === 'vehicle') apiType = 'vehicles';
+    
+    // Make API call
+    fetch(`/enforcement/api/search?q=${encodeURIComponent(query)}&type=${apiType}`)
+        .then(response => response.json())
+        .then(data => {
+            displaySearchResults(data, entityType);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            resultsDiv.innerHTML = '<div class="alert alert-danger">Error searching. Please try again.</div>';
+        });
+}
+
+function displaySearchResults(data, entityType) {
+    const resultsDiv = document.getElementById('searchResults');
+    let entities = [];
+    
+    if (entityType === 'user') {
+        entities = data.users || [];
+    } else if (entityType === 'business') {
+        entities = data.businesses || [];
+    } else if (entityType === 'vehicle') {
+        entities = data.vehicles || [];
+    }
+    
+    if (entities.length === 0) {
+        resultsDiv.innerHTML = '<div class="alert alert-info">No results found.</div>';
+        return;
+    }
+    
+    let html = '<div class="list-group">';
+    entities.forEach(entity => {
+        if (entityType === 'user') {
+            html += `
+                <a href="#" class="list-group-item list-group-item-action" onclick="selectEntity('user', ${entity.id}, '${entity.name.replace(/'/g, "\\'")}', '${entity.nin}'); return false;">
+                    <strong>${entity.name}</strong><br>
+                    <small>NIN: ${entity.nin} | Category: ${entity.category}</small>
+                    ${entity.status === 'suspended' ? '<span class="badge bg-danger ms-2">Suspended</span>' : ''}
+                </a>
+            `;
+        } else if (entityType === 'business') {
+            html += `
+                <a href="#" class="list-group-item list-group-item-action" onclick="selectEntity('business', ${entity.id}, '${entity.business_name.replace(/'/g, "\\'")}', '${entity.registration_number}'); return false;">
+                    <strong>${entity.business_name}</strong><br>
+                    <small>Reg: ${entity.registration_number} | Owner: ${entity.owner_name}</small>
+                </a>
+            `;
+        } else if (entityType === 'vehicle') {
+            html += `
+                <a href="#" class="list-group-item list-group-item-action" onclick="selectEntity('vehicle', ${entity.id}, '${entity.plate_number.replace(/'/g, "\\'")}', '${entity.owner_name.replace(/'/g, "\\'")}'); return false;">
+                    <strong>${entity.plate_number}</strong><br>
+                    <small>Owner: ${entity.owner_name}</small>
+                </a>
+            `;
         }
     });
-});
+    html += '</div>';
+    resultsDiv.innerHTML = html;
+}
 
-// Get GPS location
+function selectEntity(type, id, name, identifier) {
+    const selectedDiv = document.getElementById('selectedEntity');
+    let html = '';
+    
+    if (type === 'user') {
+        html = `
+            <div class="alert alert-success">
+                <i class="bi bi-person-circle"></i>
+                <strong>Selected User:</strong> ${name} (NIN: ${identifier})
+                <input type="hidden" name="entity_id" value="${id}">
+                <button type="button" class="btn-close float-end" onclick="clearSelection()"></button>
+            </div>
+        `;
+    } else if (type === 'business') {
+        html = `
+            <div class="alert alert-success">
+                <i class="bi bi-building"></i>
+                <strong>Selected Business:</strong> ${name}
+                <br><small>Registration: ${identifier}</small>
+                <input type="hidden" name="entity_id" value="${id}">
+                <button type="button" class="btn-close float-end" onclick="clearSelection()"></button>
+            </div>
+        `;
+    } else if (type === 'vehicle') {
+        html = `
+            <div class="alert alert-success">
+                <i class="bi bi-truck"></i>
+                <strong>Selected Vehicle:</strong> ${name}
+                <br><small>Owner: ${identifier}</small>
+                <input type="hidden" name="entity_id" value="${id}">
+                <button type="button" class="btn-close float-end" onclick="clearSelection()"></button>
+            </div>
+        `;
+    }
+    
+    selectedDiv.innerHTML = html;
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('searchInput').value = '';
+    
+    alert(`${type.charAt(0).toUpperCase() + type.slice(1)} selected successfully!`);
+}
+
+function clearSelection() {
+    document.getElementById('selectedEntity').innerHTML = `
+        <div class="alert alert-warning">
+            <i class="bi bi-info-circle"></i>
+            No entity selected. Use the search above to find a user, business, or vehicle.
+        </div>
+        <input type="hidden" name="entity_id" value="">
+    `;
+}
+
 function getLocation() {
     if (navigator.geolocation) {
+        // Show loading indicator
+        const btn = event.target;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Getting location...';
+        btn.disabled = true;
+        
         navigator.geolocation.getCurrentPosition(function(position) {
-            document.getElementById('gps_coordinates').value = 
-                position.coords.latitude + ',' + position.coords.longitude;
+            const coordinates = position.coords.latitude + ',' + position.coords.longitude;
+            document.getElementById('gps_coordinates').value = coordinates;
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            alert('Location captured successfully!');
         }, function(error) {
-            alert('Error getting location: ' + error.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            let errorMessage = 'Unable to get location. ';
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage += 'Please enable location permissions.';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage += 'Location information unavailable.';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage += 'Location request timed out.';
+                    break;
+                default:
+                    errorMessage += 'Please enter location manually.';
+            }
+            alert(errorMessage);
         });
     } else {
-        alert("Geolocation is not supported by this browser.");
+        alert('Geolocation is not supported by this browser.');
     }
 }
 
-// Auto-select entity if pre-filled
-document.addEventListener('DOMContentLoaded', function() {
-    const userInput = document.getElementById('prefill_user_id');
-    const businessInput = document.getElementById('prefill_business_id');
-    const vehicleInput = document.getElementById('prefill_vehicle_id');
+// Auto-fill description based on violation type
+document.getElementById('violation_type').addEventListener('change', function() {
+    const description = document.getElementById('description');
+    const today = new Date().toLocaleDateString();
     
-    if (userInput) {
-        document.getElementById('entity_user').checked = true;
-        document.getElementById('user_select').style.display = 'block';
-        document.getElementById('user_id').value = userInput.value;
-    } else if (businessInput) {
-        document.getElementById('entity_business').checked = true;
-        document.getElementById('business_select').style.display = 'block';
-        document.getElementById('business_id').value = businessInput.value;
-    } else if (vehicleInput) {
-        document.getElementById('entity_vehicle').checked = true;
-        document.getElementById('vehicle_select').style.display = 'block';
-        document.getElementById('vehicle_id').value = vehicleInput.value;
+    if (this.value === 'No Payment Today') {
+        description.value = `No valid payment found for today (${today}). User operating without valid levy payment.`;
+    } else if (this.value === 'Expired Payment') {
+        description.value = `Payment has expired. Last payment was made on a previous date.`;
+    } else if (this.value === 'Invalid Receipt') {
+        description.value = `Receipt presented could not be verified in the system.`;
+    } else if (this.value === 'Unregistered Vehicle/Business') {
+        description.value = `Entity operating without proper registration in the system.`;
+    } else if (this.value === 'Operating Without License') {
+        description.value = `Operating without valid license or permit.`;
     }
+});
+
+// Entity type change handler
+document.querySelectorAll('input[name="entity_type"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        clearSelection();
+        document.getElementById('searchInput').value = '';
+        document.getElementById('searchResults').style.display = 'none';
+    });
 });
 </script>
 {% endblock %}

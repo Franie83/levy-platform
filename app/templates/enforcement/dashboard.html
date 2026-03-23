@@ -4,6 +4,23 @@
 <div class="container-fluid">
     <h2 class="mb-4">Enforcer Dashboard</h2>
     
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body text-center">
+                    <h4>Quick Actions</h4>
+                    <a href="{{ url_for('enforcement.verify') }}" class="btn btn-light btn-lg me-2">
+                        <i class="bi bi-search"></i> Verify Payment
+                    </a>
+                    <a href="{{ url_for('enforcement.record_violation') }}" class="btn btn-light btn-lg">
+                        <i class="bi bi-exclamation-triangle"></i> Record Violation
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Statistics Cards -->
     <div class="row">
         <div class="col-md-3 mb-3">
@@ -40,24 +57,33 @@
         </div>
     </div>
 
-    <!-- Quick Actions -->
     <div class="row mt-4">
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Quick Actions</h5>
+                    <h5 class="mb-0">Recent Verifications</h5>
                 </div>
                 <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="{{ url_for('enforcement.verify') }}" class="btn btn-primary btn-lg">
-                            <i class="bi bi-search"></i> Verify Payment
-                        </a>
-                        <a href="{{ url_for('enforcement.record_violation') }}" class="btn btn-warning btn-lg">
-                            <i class="bi bi-exclamation-triangle"></i> Record Violation
-                        </a>
-                        <a href="{{ url_for('enforcement.violations') }}" class="btn btn-info btn-lg">
-                            <i class="bi bi-list-check"></i> View Violations
-                        </a>
+                    <div class="list-group">
+                        {% for payment in recent_verifications %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ payment.receipt_number }}</strong>
+                                <small>₦{{ "{:,.2f}".format(payment.amount) }}</small>
+                            </div>
+                            <small class="text-muted">
+                                {% if payment.verification_date %}
+                                    {{ payment.verification_date.strftime('%Y-%m-%d %H:%M') }}
+                                {% elif payment.payment_date %}
+                                    {{ payment.payment_date.strftime('%Y-%m-%d %H:%M') }}
+                                {% else %}
+                                    {{ payment.created_at.strftime('%Y-%m-%d %H:%M') if payment.created_at else 'N/A' }}
+                                {% endif %}
+                            </small>
+                        </div>
+                        {% else %}
+                        <p class="text-muted">No recent verifications</p>
+                        {% endfor %}
                     </div>
                 </div>
             </div>
@@ -66,80 +92,35 @@
         <div class="col-md-6">
             <div class="card">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Recent Verifications</h5>
-                </div>
-                <div class="card-body">
-                    <div class="list-group">
-                        {% for payment in recent_verifications %}
-                        <a href="{{ url_for('enforcement.verify_payment', payment_id=payment.id) }}" 
-                           class="list-group-item list-group-item-action">
-                            <div class="d-flex justify-content-between">
-                                <strong>{{ payment.receipt_number }}</strong>
-                                <small>₦{{ "{:,.2f}".format(payment.amount) }}</small>
-                            </div>
-                            <small class="text-muted">{{ payment.payment_date.strftime('%Y-%m-%d %H:%M') }}</small>
-                        </a>
-                        {% else %}
-                        <p class="text-muted">No recent verifications</p>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Violations -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-danger text-white">
                     <h5 class="mb-0">Recent Violations</h5>
                 </div>
                 <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Type</th>
-                                    <th>Entity</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for violation in recent_violations %}
-                                <tr>
-                                    <td>{{ violation.id }}</td>
-                                    <td>{{ violation.violation_type }}</td>
-                                    <td>
-                                        {% if violation.vehicle %}
-                                            Vehicle: {{ violation.vehicle.plate_number }}
-                                        {% elif violation.business %}
-                                            Business: {{ violation.business.business_name }}
-                                        {% elif violation.user %}
-                                            User: {{ violation.user.name }}
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ violation.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'warning' if violation.status == 'pending' else 'success' if violation.status == 'resolved' else 'secondary' }}">
-                                            {{ violation.status }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <a href="{{ url_for('enforcement.view_violation', violation_id=violation.id) }}" 
-                                           class="btn btn-sm btn-info">View</a>
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="6" class="text-center">No violations recorded</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="list-group">
+                        {% for violation in recent_violations %}
+                        <a href="{{ url_for('enforcement.violation_detail', violation_id=violation.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ violation.violation_type }}</strong>
+                                <span class="badge bg-{{ 'warning' if violation.status == 'pending' else 'success' if violation.status == 'resolved' else 'secondary' }}">
+                                    {{ violation.status }}
+                                </span>
+                            </div>
+                            <small class="text-muted">
+                                {{ violation.created_at.strftime('%Y-%m-%d %H:%M') if violation.created_at else 'N/A' }}
+                            </small>
+                            <br>
+                            <small class="text-muted">
+                                {% if violation.user %}
+                                    User: {{ violation.user.name }}
+                                {% elif violation.business %}
+                                    Business: {{ violation.business.business_name }}
+                                {% elif violation.vehicle %}
+                                    Vehicle: {{ violation.vehicle.plate_number }}
+                                {% endif %}
+                            </small>
+                        </a>
+                        {% else %}
+                        <p class="text-muted">No recent violations</p>
+                        {% endfor %}
                     </div>
                 </div>
             </div>

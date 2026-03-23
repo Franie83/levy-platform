@@ -1,0 +1,403 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h4 class="mb-0">
+                        <i class="bi bi-search"></i> Verify Payment
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Tabs for different verification methods -->
+                    <ul class="nav nav-tabs mb-4" id="verifyTab" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual" type="button" role="tab">
+                                <i class="bi bi-keyboard"></i> Manual Entry
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab">
+                                <i class="bi bi-upload"></i> Upload QR Code
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="camera-tab" data-bs-toggle="tab" data-bs-target="#camera" type="button" role="tab">
+                                <i class="bi bi-camera"></i> Live Camera
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content">
+                        <!-- Manual Entry Tab -->
+                        <div class="tab-pane fade show active" id="manual" role="tabpanel">
+                            <form action="{{ url_for('enforcement.verify_receipt') }}" method="GET">
+                                <div class="mb-3">
+                                    <label for="receipt" class="form-label">Receipt Number</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text">
+                                            <i class="bi bi-receipt"></i>
+                                        </span>
+                                        <input type="text" class="form-control" id="receipt" name="receipt" 
+                                               placeholder="Enter receipt number (e.g., RCP0DD56BE604C6)" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-search"></i> Verify Payment
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Upload QR Code Tab -->
+                        <div class="tab-pane fade" id="upload" role="tabpanel">
+                            <div class="text-center mb-3">
+                                <i class="bi bi-qr-code" style="font-size: 3rem;"></i>
+                                <p class="mt-2">Upload a QR code image from your device</p>
+                            </div>
+                            
+                            <div class="upload-area" id="uploadArea" 
+                                 style="border: 2px dashed #ccc; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer;">
+                                <i class="bi bi-cloud-upload" style="font-size: 3rem; color: #6c757d;"></i>
+                                <p class="mt-2">Click to select image</p>
+                                <small>PNG, JPG, GIF</small>
+                                <input type="file" id="qrFileInput" accept="image/*" style="display: none;">
+                            </div>
+                            
+                            <div id="uploadPreview" style="display: none;" class="mt-3 text-center">
+                                <img id="previewImage" style="max-width: 200px; border: 1px solid #ddd; padding: 5px;">
+                                <div class="mt-2">
+                                    <button class="btn btn-primary" onclick="scanUploadedQR()">
+                                        <i class="bi bi-search"></i> Scan QR Code
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="clearUpload()">
+                                        <i class="bi bi-x-circle"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="uploadResult" style="display: none;" class="mt-3"></div>
+                        </div>
+                        
+                        <!-- Live Camera Tab -->
+                        <div class="tab-pane fade" id="camera" role="tabpanel">
+                            <div class="text-center mb-3">
+                                <i class="bi bi-camera-video" style="font-size: 3rem;"></i>
+                                <p class="mt-2">Position the QR code in front of the camera</p>
+                            </div>
+                            
+                            <div class="scanner-container" style="position: relative; width: 100%; max-width: 500px; margin: 0 auto;">
+                                <div id="qr-reader" style="width: 100%; min-height: 400px;"></div>
+                                <div class="scan-line"></div>
+                                <div class="corner-frame top-left"></div>
+                                <div class="corner-frame top-right"></div>
+                                <div class="corner-frame bottom-left"></div>
+                                <div class="corner-frame bottom-right"></div>
+                            </div>
+                            
+                            <div id="cameraStatus" class="mt-3 text-center">
+                                <div class="alert alert-info">
+                                    <i class="bi bi-camera-video"></i> 
+                                    <span id="cameraStatusText">Initializing camera...</span>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-3">
+                                <button class="btn btn-danger" onclick="stopCamera()" id="stopCameraBtn">
+                                    <i class="bi bi-stop-circle"></i> Stop Camera
+                                </button>
+                                <button class="btn btn-success" onclick="startCamera()" id="startCameraBtn" style="display: none;">
+                                    <i class="bi bi-play-circle"></i> Start Camera
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i>
+                            <strong>How to verify:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li><strong>Manual Entry:</strong> Enter a receipt number directly</li>
+                                <li><strong>Upload QR Code:</strong> Upload an image containing a QR code</li>
+                                <li><strong>Live Camera:</strong> Use your camera to scan QR codes in real-time</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Html5 Qrcode library -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+<style>
+    .upload-area {
+        transition: all 0.3s ease;
+    }
+    .upload-area:hover {
+        border-color: #007bff !important;
+        background-color: #f8f9fa;
+    }
+    .scanner-container {
+        position: relative;
+        background: #000;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 0 auto;
+    }
+    .scan-line {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #00ff00, #00ff00, transparent);
+        box-shadow: 0 0 10px #00ff00;
+        animation: scanMove 2s linear infinite;
+        pointer-events: none;
+        z-index: 20;
+    }
+    @keyframes scanMove {
+        0% { top: 0; opacity: 0; }
+        10% { opacity: 1; }
+        90% { opacity: 1; }
+        100% { top: 100%; opacity: 0; }
+    }
+    .corner-frame {
+        position: absolute;
+        width: 40px;
+        height: 40px;
+        border: 3px solid #00ff00;
+        z-index: 15;
+        pointer-events: none;
+    }
+    .top-left { top: 20px; left: 20px; border-right: none; border-bottom: none; }
+    .top-right { top: 20px; right: 20px; border-left: none; border-bottom: none; }
+    .bottom-left { bottom: 20px; left: 20px; border-right: none; border-top: none; }
+    .bottom-right { bottom: 20px; right: 20px; border-left: none; border-top: none; }
+    .scanner-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        z-index: 9999;
+        display: none;
+        justify-content: center;
+        align-items: center;
+    }
+    .scanner-loading .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+</style>
+
+<div class="scanner-loading" id="loadingSpinner">
+    <div class="text-center">
+        <div class="spinner-border text-light" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-white mt-2">Processing...</p>
+    </div>
+</div>
+
+<script>
+let html5QrCode = null;
+let isScanning = false;
+let selectedFile = null;
+
+// ==================== Upload QR Code Functions ====================
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('qrFileInput');
+const uploadPreview = document.getElementById('uploadPreview');
+const previewImage = document.getElementById('previewImage');
+
+uploadArea.addEventListener('click', () => {
+    fileInput.click();
+});
+
+fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+        selectedFile = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            previewImage.src = e.target.result;
+            uploadPreview.style.display = 'block';
+            uploadArea.style.display = 'none';
+        };
+        reader.readAsDataURL(selectedFile);
+    }
+});
+
+function clearUpload() {
+    selectedFile = null;
+    fileInput.value = '';
+    uploadPreview.style.display = 'none';
+    uploadArea.style.display = 'block';
+    document.getElementById('uploadResult').style.display = 'none';
+}
+
+async function scanUploadedQR() {
+    if (!selectedFile) {
+        alert('Please select an image first');
+        return;
+    }
+    
+    const resultDiv = document.getElementById('uploadResult');
+    resultDiv.style.display = 'block';
+    resultDiv.innerHTML = '<div class="alert alert-info"><i class="bi bi-hourglass-split"></i> Processing image...</div>';
+    
+    showLoading();
+    
+    try {
+        const tempDiv = document.createElement('div');
+        tempDiv.id = 'temp-scanner';
+        tempDiv.style.display = 'none';
+        document.body.appendChild(tempDiv);
+        
+        const scanner = new Html5Qrcode("temp-scanner");
+        const result = await scanner.scanFile(selectedFile, true);
+        
+        if (result) {
+            resultDiv.innerHTML = '<div class="alert alert-success"><i class="bi bi-check-circle"></i> QR Code detected! Redirecting...</div>';
+            await scanner.clear();
+            document.body.removeChild(tempDiv);
+            
+            setTimeout(() => {
+                window.location.href = "{{ url_for('enforcement.verify_receipt') }}?receipt=" + encodeURIComponent(result);
+            }, 1000);
+        } else {
+            resultDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> No QR code found in the image.</div>';
+            hideLoading();
+            await scanner.clear();
+            document.body.removeChild(tempDiv);
+        }
+    } catch (error) {
+        resultDiv.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Error: ' + error.message + '</div>';
+        hideLoading();
+        const tempDiv = document.getElementById('temp-scanner');
+        if (tempDiv) document.body.removeChild(tempDiv);
+    }
+}
+
+// ==================== Live Camera Functions ====================
+async function startCamera() {
+    const qrReader = document.getElementById('qr-reader');
+    if (!qrReader) return;
+    
+    if (html5QrCode) {
+        try { await html5QrCode.stop(); } catch(e) {}
+    }
+    
+    qrReader.innerHTML = '';
+    html5QrCode = new Html5Qrcode("qr-reader");
+    
+    const config = {
+        fps: 10,
+        qrbox: { width: 280, height: 280 },
+        aspectRatio: 1.0,
+        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ]
+    };
+    
+    try {
+        await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onCameraScanSuccess,
+            onCameraScanError
+        );
+        
+        isScanning = true;
+        document.getElementById('cameraStatusText').textContent = 'Camera ready. Position QR code in the frame.';
+        document.getElementById('cameraStatus').innerHTML = '<div class="alert alert-success"><i class="bi bi-camera-video"></i> Camera ready. Position QR code in the frame.</div>';
+        document.getElementById('stopCameraBtn').style.display = 'inline-block';
+        document.getElementById('startCameraBtn').style.display = 'none';
+        
+    } catch (err) {
+        document.getElementById('cameraStatusText').textContent = 'Unable to access camera. Please ensure camera permissions are granted.';
+        document.getElementById('cameraStatus').innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> Unable to access camera. Please ensure camera permissions are granted.</div>';
+    }
+}
+
+function onCameraScanSuccess(decodedText, decodedResult) {
+    updateCameraStatus('QR Code detected! Redirecting...', 'success');
+    
+    if (html5QrCode && isScanning) {
+        html5QrCode.stop().then(() => {
+            isScanning = false;
+            document.getElementById('stopCameraBtn').style.display = 'none';
+            document.getElementById('startCameraBtn').style.display = 'inline-block';
+        }).catch(err => console.log(err));
+    }
+    
+    showLoading();
+    setTimeout(() => {
+        window.location.href = "{{ url_for('enforcement.verify_receipt') }}?receipt=" + encodeURIComponent(decodedText);
+    }, 1000);
+}
+
+function onCameraScanError(errorMessage) {
+    // Silent error handling
+}
+
+function updateCameraStatus(message, type) {
+    const statusDiv = document.getElementById('cameraStatus');
+    const icon = type === 'success' ? 'check-circle' : (type === 'danger' ? 'exclamation-triangle' : 'info-circle');
+    statusDiv.innerHTML = `<div class="alert alert-${type}"><i class="bi bi-${icon}"></i> ${message}</div>`;
+}
+
+async function stopCamera() {
+    if (html5QrCode && isScanning) {
+        try {
+            await html5QrCode.stop();
+            isScanning = false;
+            updateCameraStatus('Camera stopped.', 'info');
+            document.getElementById('stopCameraBtn').style.display = 'none';
+            document.getElementById('startCameraBtn').style.display = 'inline-block';
+            
+            const qrReader = document.getElementById('qr-reader');
+            if (qrReader) {
+                qrReader.innerHTML = '<div class="text-center p-5"><i class="bi bi-camera-off" style="font-size: 3rem;"></i><p class="mt-2">Camera is off</p></div>';
+            }
+        } catch (err) {}
+    }
+}
+
+// ==================== Common Functions ====================
+function showLoading() {
+    document.getElementById('loadingSpinner').style.display = 'flex';
+}
+
+function hideLoading() {
+    document.getElementById('loadingSpinner').style.display = 'none';
+}
+
+// Initialize camera when tab is shown
+document.getElementById('camera-tab').addEventListener('shown.bs.tab', function() {
+    setTimeout(startCamera, 500);
+});
+
+document.getElementById('manual-tab').addEventListener('shown.bs.tab', function() {
+    stopCamera();
+});
+
+document.getElementById('upload-tab').addEventListener('shown.bs.tab', function() {
+    stopCamera();
+});
+
+// Clean up on page unload
+window.addEventListener('beforeunload', function() {
+    if (html5QrCode && isScanning) {
+        html5QrCode.stop().catch(console.log);
+    }
+});
+</script>
+{% endblock %}

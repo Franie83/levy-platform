@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> {{ user.name }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Phone:</strong> {{ user.phone }}</p>
+                    <p><strong>NIN:</strong> {{ user.nin }}</p>
+                    <p><strong>Role:</strong> <span class="badge bg-info">{{ user.role }}</span></p>
+                    <p><strong>Category:</strong> {{ user.category or '-' }}</p>
+                    <p><strong>Status:</strong> 
+                        <span class="badge bg-{{ 'success' if user.status == 'active' else 'danger' }}">
+                            {{ user.status }}
+                        </span>
+                    </p>
+                    <p><strong>Registered:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                </div>
+            </div>
+            
+            <!-- QR Code Card -->
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-qr-code"></i> QR Code</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if user.qr_code %}
+                        <div class="qr-container p-3 bg-light rounded">
+                            <img src="{{ url_for('static', filename='uploads/qrcodes/users/' + user.qr_code) }}" 
+                                 alt="QR Code for {{ user.name }}"
+                                 style="max-width: 200px; width: 100%; height: auto;"
+                                 class="img-fluid border p-2 bg-white shadow-sm">
+                        </div>
+                        <p class="text-muted small mt-2">
+                            <i class="bi bi-info-circle"></i> 
+                            Enforcers can scan this QR code to verify this user's payments
+                        </p>
+                        <div class="btn-group w-100">
+                            <a href="{{ url_for('static', filename='uploads/qrcodes/users/' + user.qr_code) }}" 
+                               download="user_qr_{{ user.nin }}.png" 
+                               class="btn btn-success">
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                            <a href="{{ url_for('static', filename='uploads/qrcodes/users/' + user.qr_code) }}" 
+                               target="_blank" 
+                               class="btn btn-info">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            No QR code generated for this user.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <!-- Businesses Card for MSME users -->
+            {% if user.category == 'MSME' and businesses %}
+            <div class="card mb-3">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-building"></i> Businesses ({{ businesses|length }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                32
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Registration</th>
+                                    <th>Status</th>
+                                    <th>QR Code</th>
+                                    <th>Actions</th>
+                                </thead>
+                            <tbody>
+                                {% for business in businesses %}
+                                <tr>
+                                    <td><strong>{{ business.business_name }}</strong></td>
+                                    <td>{{ business.business_type.name if business.business_type else 'N/A' }}</td>
+                                    <td>{{ business.registration_number or 'N/A' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if business.status == 'active' else 'danger' }}">
+                                            {{ business.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if business.qr_code %}
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('static', filename='uploads/qrcodes/businesses/' + business.qr_code) }}" 
+                                                   target="_blank" 
+                                                   class="btn btn-info" 
+                                                   title="View QR Code">
+                                                    <i class="bi bi-qr-code"></i>
+                                                </a>
+                                                <a href="{{ url_for('static', filename='uploads/qrcodes/businesses/' + business.qr_code) }}" 
+                                                   download="business_qr_{{ business.registration_number or business.id }}.png" 
+                                                   class="btn btn-success" 
+                                                   title="Download QR Code">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">No QR</span>
+                                            <a href="{{ url_for('admin.generate_business_qr', business_id=business.id) }}" 
+                                               class="btn btn-sm btn-warning" title="Generate QR Code">
+                                                <i class="bi bi-plus-circle"></i>
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('admin.view_business', business_id=business.id) }}" 
+                                               class="btn btn-info" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('admin.edit_business', business_id=business.id) }}" 
+                                               class="btn btn-warning" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Vehicles Card for Transporter users -->
+            {% if user.category == 'Transporter' and vehicles %}
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-truck"></i> Vehicles ({{ vehicles|length }})</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-dark">
+                                32
+                                    <th>Plate</th>
+                                    <th>Type</th>
+                                    <th>Brand/Model</th>
+                                    <th>Status</th>
+                                    <th>QR Code</th>
+                                    <th>Actions</th>
+                                </thead>
+                            <tbody>
+                                {% for vehicle in vehicles %}
+                                <tr>
+                                    <td><strong>{{ vehicle.plate_number }}</strong></td>
+                                    <td>{{ vehicle.vehicle_type.name if vehicle.vehicle_type else 'N/A' }}</td>
+                                    <td>{{ vehicle.brand or '' }} {{ vehicle.model or '' }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if vehicle.status == 'active' else 'danger' }}">
+                                            {{ vehicle.status }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if vehicle.qr_code %}
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('static', filename='uploads/qrcodes/vehicles/' + vehicle.qr_code) }}" 
+                                                   target="_blank" 
+                                                   class="btn btn-info" 
+                                                   title="View QR Code">
+                                                    <i class="bi bi-qr-code"></i>
+                                                </a>
+                                                <a href="{{ url_for('static', filename='uploads/qrcodes/vehicles/' + vehicle.qr_code) }}" 
+                                                   download="vehicle_qr_{{ vehicle.plate_number }}.png" 
+                                                   class="btn btn-success" 
+                                                   title="Download QR Code">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">No QR</span>
+                                            <a href="{{ url_for('admin.generate_vehicle_qr', vehicle_id=vehicle.id) }}" 
+                                               class="btn btn-sm btn-warning" title="Generate QR Code">
+                                                <i class="bi bi-plus-circle"></i>
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('admin.view_vehicle', vehicle_id=vehicle.id) }}" 
+                                               class="btn btn-info" title="View">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('admin.edit_vehicle', vehicle_id=vehicle.id) }}" 
+                                               class="btn btn-warning" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- If user has no category-specific items -->
+            {% if not businesses and not vehicles %}
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">Information</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="text-muted mb-0">No businesses or vehicles registered for this user.</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.btn-group-sm .btn {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+.qr-container {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+}
+.table td {
+    vertical-align: middle;
+}
+</style>
+
+<script>
+// Function to generate QR code for business
+function generateBusinessQR(businessId) {
+    fetch(`/admin/generate-business-qr/${businessId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to generate QR code');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error generating QR code');
+    });
+}
+
+// Function to generate QR code for vehicle
+function generateVehicleQR(vehicleId) {
+    fetch(`/admin/generate-vehicle-qr/${vehicleId}`, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Failed to generate QR code');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error generating QR code');
+    });
+}
+</script>
+{% endblock %}

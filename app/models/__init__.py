@@ -15,6 +15,7 @@ class User(UserMixin, db.Model):
     category = db.Column(db.String(20)) 
     profile_image = db.Column(db.String(200)) 
     status = db.Column(db.String(20), default='active') 
+    qr_code = db.Column(db.String(200))  # ADDED QR CODE FIELD
     created_at = db.Column(db.DateTime, default=datetime.utcnow) 
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow) 
  
@@ -30,6 +31,13 @@ class User(UserMixin, db.Model):
  
     def check_password(self, password): 
         return check_password_hash(self.password_hash, password) 
+    
+    def get_qr_code_url(self):
+        """Get the URL for the user's QR code"""
+        if self.qr_code:
+            from flask import url_for
+            return url_for('static', filename=f'uploads/qrcodes/users/{self.qr_code}')
+        return None
 
 # ==================== ADMIN-CONTROLLED MODELS WITH AMOUNTS ====================
 
@@ -96,11 +104,12 @@ class Business(db.Model):
     employee_count = db.Column(db.Integer) 
     year_established = db.Column(db.Integer) 
     business_photo = db.Column(db.String(200)) 
+    qr_code = db.Column(db.String(200))  # ADD THIS FIELD
     status = db.Column(db.String(20), default='active') 
     created_at = db.Column(db.DateTime, default=datetime.utcnow) 
  
     vehicles = db.relationship('Vehicle', backref='business', lazy=True) 
-    payments = db.relationship('Payment', backref='business', lazy=True) 
+    payments = db.relationship('Payment', backref='business', lazy=True)
 
 # ==================== VEHICLE MODEL ====================
 
@@ -124,9 +133,9 @@ class Vehicle(db.Model):
     insurance_policy_number = db.Column(db.String(50)) 
     vehicle_photo = db.Column(db.String(200)) 
     plate_photo = db.Column(db.String(200)) 
+    qr_code = db.Column(db.String(200))  # ADD THIS FIELD
     status = db.Column(db.String(20), default='active') 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow) 
-
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 # ==================== UPDATED PAYMENT MODEL ====================
 
 class Payment(db.Model): 
@@ -181,11 +190,12 @@ class Violation(db.Model):
     status = db.Column(db.String(20), default='pending') 
     created_at = db.Column(db.DateTime, default=datetime.utcnow) 
  
-    # Relationships - ADD THESE
+    # Relationships
     enforcer = db.relationship('User', foreign_keys=[enforcer_id], backref='enforced_violations')
     user = db.relationship('User', foreign_keys=[user_id], backref='user_violations')
     business = db.relationship('Business', backref='business_violations')
     vehicle = db.relationship('Vehicle', backref='vehicle_violations') 
+    
 class AuditLog(db.Model): 
     __tablename__ = 'audit_logs' 
     id = db.Column(db.Integer, primary_key=True) 

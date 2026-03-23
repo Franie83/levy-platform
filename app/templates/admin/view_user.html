@@ -15,7 +15,7 @@
     </div>
 
     <div class="row">
-        {# Personal Information Card - Fixed width on large screens #}
+        {# Personal Information Card #}
         <div class="col-lg-4 col-md-5 mb-4">
             <div class="card h-100">
                 <div class="card-header bg-primary text-white">
@@ -23,24 +23,24 @@
                 </div>
                 <div class="card-body">
                     <table class="table table-borderless">
-                        <tr><th width="40%">Name:</th><td>{{ user.name }}</td></tr>
-                        <tr><th>Email:</th><td>{{ user.email }}</td></tr>
-                        <tr><th>Phone:</th><td>{{ user.phone }}</td></tr>
-                        <tr><th>NIN:</th><td>{{ user.nin }}</td></tr>
-                        <tr><th>Role:</th><td><span class="badge bg-info">{{ user.role }}</span></td></tr>
-                        <tr><th>Category:</th><td>
+                         <tr><th width="40%">Name:</th><td>{{ user.name }}</td></tr>
+                         <tr><th>Email:</th><td>{{ user.email }}</td></tr>
+                         <tr><th>Phone:</th><td>{{ user.phone }}</td></tr>
+                         <tr><th>NIN:</th><td>{{ user.nin }}</td></tr>
+                         <tr><th>Role:</th><td><span class="badge bg-info">{{ user.role }}</span></td></tr>
+                         <tr><th>Category:</th><td>
                             {% if user.category %}
                                 <span class="badge bg-secondary">{{ user.category }}</span>
                             {% else %}
                                 N/A
                             {% endif %}
-                        </td></tr>
-                        <tr><th>Status:</th><td>
+                         </td></tr>
+                         <tr><th>Status:</th><td>
                             <span class="badge bg-{{ 'success' if user.status == 'active' else 'danger' }}">
                                 {{ user.status }}
                             </span>
-                        </td></tr>
-                        <tr><th>Registered:</th><td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+                         </td></tr>
+                         <tr><th>Registered:</th><td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
                     </table>
 
                     <hr>
@@ -67,9 +67,55 @@
             </div>
         </div>
 
-        {# Show Businesses card only for MSME users - takes remaining space #}
+        {# QR Code Card #}
+        <div class="col-lg-4 col-md-5 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-qr-code me-2"></i>QR Code</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if user.qr_code %}
+                        <div class="qr-container p-3 bg-light rounded mb-3">
+                            <img src="{{ url_for('static', filename='uploads/qrcodes/users/' + user.qr_code) }}" 
+                                 alt="QR Code for {{ user.name }}"
+                                 style="max-width: 200px; width: 100%; height: auto;"
+                                 class="img-fluid border p-2 bg-white shadow-sm">
+                        </div>
+                        <p class="text-muted small">
+                            <i class="bi bi-info-circle"></i> 
+                            Enforcers can scan this QR code to verify this user's payments
+                        </p>
+                        <div class="btn-group w-100" role="group">
+                            <a href="{{ url_for('static', filename='uploads/qrcodes/users/' + user.qr_code) }}" 
+                               download="qr_code_{{ user.nin }}.png" 
+                               class="btn btn-success">
+                                <i class="bi bi-download"></i> Download
+                            </a>
+                            <a href="{{ url_for('static', filename='uploads/qrcodes/users/' + user.qr_code) }}" 
+                               target="_blank" 
+                               class="btn btn-info">
+                                <i class="bi bi-eye"></i> View
+                            </a>
+                            <button onclick="window.print()" class="btn btn-secondary">
+                                <i class="bi bi-printer"></i> Print
+                            </button>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning mb-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            No QR code generated for this user yet.
+                        </div>
+                        <a href="{{ url_for('admin.generate_single_user_qrcode', user_id=user.id) }}" class="btn btn-primary">
+                            <i class="bi bi-qr-code"></i> Generate QR Code
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {# Show Businesses card only for MSME users #}
         {% if user.category == 'MSME' %}
-        <div class="col-lg-8 col-md-7 mb-4">
+        <div class="col-lg-4 col-md-5 mb-4">
             <div class="card h-100">
                 <div class="card-header bg-success text-white">
                     <h5 class="mb-0"><i class="bi bi-building me-2"></i>Businesses ({{ businesses|length }})</h5>
@@ -79,7 +125,7 @@
                         <div class="table-responsive">
                             <table class="table table-sm table-hover">
                                 <thead>
-                                    <tr>
+                                    32
                                         <th>Name</th>
                                         <th>Type</th>
                                         <th>Status</th>
@@ -90,7 +136,7 @@
                                     {% for business in businesses %}
                                     <tr>
                                         <td>{{ business.business_name }}</td>
-                                        <td>{{ business.business_type or 'N/A' }}</td>
+                                        <td>{{ business.business_type.name if business.business_type else 'N/A' }}</td>
                                         <td>
                                             <span class="badge bg-{{ 'success' if business.status == 'active' else 'danger' }}">
                                                 {{ business.status }}
@@ -132,9 +178,9 @@
         </div>
         {% endif %}
 
-        {# Show Vehicles card only for Transporter users - takes remaining space #}
+        {# Show Vehicles card only for Transporter users #}
         {% if user.category == 'Transporter' %}
-        <div class="col-lg-8 col-md-7 mb-4">
+        <div class="col-lg-4 col-md-5 mb-4">
             <div class="card h-100">
                 <div class="card-header bg-info text-white">
                     <h5 class="mb-0"><i class="bi bi-truck me-2"></i>Vehicles ({{ vehicles|length }})</h5>
@@ -144,7 +190,7 @@
                         <div class="table-responsive">
                             <table class="table table-sm table-hover">
                                 <thead>
-                                    <tr>
+                                    32
                                         <th>Plate</th>
                                         <th>Type</th>
                                         <th>Brand/Model</th>
@@ -156,7 +202,7 @@
                                     {% for vehicle in vehicles %}
                                     <tr>
                                         <td><strong>{{ vehicle.plate_number }}</strong></td>
-                                        <td>{{ vehicle.vehicle_type or 'N/A' }}</td>
+                                        <td>{{ vehicle.vehicle_type.name if vehicle.vehicle_type else 'N/A' }}</td>
                                         <td>{{ vehicle.brand or '' }} {{ vehicle.model or '' }}</td>
                                         <td>
                                             <span class="badge bg-{{ 'success' if vehicle.status == 'active' else 'danger' }}">
@@ -199,9 +245,9 @@
         </div>
         {% endif %}
 
-        {# If user has no category or other category, show a placeholder that takes remaining space #}
+        {# If user has no category or other category, show a placeholder #}
         {% if not user.category or (user.category != 'MSME' and user.category != 'Transporter') %}
-        <div class="col-lg-8 col-md-7 mb-4">
+        <div class="col-lg-4 col-md-5 mb-4">
             <div class="card h-100">
                 <div class="card-header bg-secondary text-white">
                     <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Information</h5>
@@ -233,6 +279,66 @@
 .h-100 {
     height: 100% !important;
 }
+.qr-container {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+}
+@media print {
+    .btn, .btn-group, .card-header .btn, .form-group {
+        display: none !important;
+    }
+    .card {
+        break-inside: avoid;
+        border: 1px solid #ddd;
+    }
+    .qr-container {
+        background: white;
+    }
+}
 </style>
 
+<script>
+function printQR() {
+    const printContent = document.querySelector('.qr-container').innerHTML;
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>QR Code - {{ user.name }}</title>
+            <style>
+                body {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    min-height: 100vh;
+                    font-family: Arial, sans-serif;
+                }
+                .qr-container {
+                    text-align: center;
+                    padding: 20px;
+                }
+                img {
+                    max-width: 300px;
+                    height: auto;
+                }
+                .info {
+                    margin-top: 20px;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="qr-container">
+                ${printContent}
+                <div class="info">
+                    <p><strong>Name:</strong> {{ user.name }}</p>
+                    <p><strong>NIN:</strong> {{ user.nin }}</p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+</script>
 {% endblock %}

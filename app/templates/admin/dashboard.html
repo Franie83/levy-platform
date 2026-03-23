@@ -1,102 +1,134 @@
-{% extends "base.html" %} 
- 
-{% block content %} 
-<div class="container-fluid"> 
-    <h2 class="mb-4">Admin Dashboard</h2> 
- 
-    {# Statistics Cards #} 
-    <div class="row"> 
-        <div class="col-md-3 mb-3"> 
-            <div class="card text-white bg-primary"> 
-                <div class="card-body"> 
-                    <h5 class="card-title">Total Users</h5> 
-                    <h2 class="display-4">{{ total_users }}</h2> 
-                    <a href="{{ url_for('admin.users') }}" class="text-white">Manage Users <i class="bi bi-arrow-right"></i></a> 
-                </div> 
-            </div> 
-        </div> 
-        <div class="col-md-3 mb-3"> 
-            <div class="card text-white bg-success"> 
-                <div class="card-body"> 
-                    <h5 class="card-title">Total Businesses</h5> 
-                    <h2 class="display-4">{{ total_businesses }}</h2> 
-                    <a href="{{ url_for('admin.businesses') }}" class="text-white">Manage Businesses <i class="bi bi-arrow-right"></i></a> 
-                </div> 
-            </div> 
-        </div> 
-        <div class="col-md-3 mb-3"> 
-            <div class="card text-white bg-info"> 
-                <div class="card-body"> 
-                    <h5 class="card-title">Total Vehicles</h5> 
-                    <h2 class="display-4">{{ total_vehicles }}</h2> 
-                    <a href="{{ url_for('admin.vehicles') }}" class="text-white">Manage Vehicles <i class="bi bi-arrow-right"></i></a> 
-                </div> 
-            </div> 
-        </div> 
-        <div class="col-md-3 mb-3"> 
-            <div class="card text-white bg-warning"> 
-                <div class="card-body"> 
-                    <h5 class="card-title">Total Payments</h5> 
-                    <h2 class="display-4">{{ total_payments }}</h2> 
-                    <a href="{{ url_for('admin.payments') }}" class="text-white">View Payments <i class="bi bi-arrow-right"></i></a> 
-                </div> 
-            </div> 
-        </div> 
-    </div> 
- 
-    {# Recent Activities #} 
-    <div class="row mt-4"> 
-        <div class="col-md-4"> 
-            <div class="card"> 
-                <div class="card-header bg-primary text-white"> 
-                    <h5 class="mb-0">Recent Users</h5> 
-                </div> 
-                <div class="card-body"> 
-                    <ul class="list-group"> 
-                        {% for user in recent_users %} 
-                        <li class="list-group-item d-flex justify-content-between align-items-center"> 
-                            {{ user.name }} 
-                            <span class="badge bg-{{ 'success' if user.status == 'active' else 'danger' }}">{{ user.status }}</span> 
-                        </li> 
-                        {% endfor %} 
-                    </ul> 
-                </div> 
-            </div> 
-        </div> 
-        <div class="col-md-4"> 
-            <div class="card"> 
-                <div class="card-header bg-success text-white"> 
-                    <h5 class="mb-0">Recent Businesses</h5> 
-                </div> 
-                <div class="card-body"> 
-                    <ul class="list-group"> 
-                        {% for business in recent_businesses %} 
-                        <li class="list-group-item"> 
-                            <strong>{{ business.business_name }}</strong><br> 
-                            <small>Owner: {{ business.owner.name }}</small> 
-                        </li> 
-                        {% endfor %} 
-                    </ul> 
-                </div> 
-            </div> 
-        </div> 
-        <div class="col-md-4"> 
-            <div class="card"> 
-                <div class="card-header bg-info text-white"> 
-                    <h5 class="mb-0">Recent Vehicles</h5> 
-                </div> 
-                <div class="card-body"> 
-                    <ul class="list-group"> 
-                        {% for vehicle in recent_vehicles %} 
-                        <li class="list-group-item"> 
-                            <strong>{{ vehicle.plate_number }}</strong><br> 
-                            <small>Owner: {{ vehicle.owner.name }}</small> 
-                        </li> 
-                        {% endfor %} 
-                    </ul> 
-                </div> 
-            </div> 
-        </div> 
-    </div> 
-</div> 
-{% endblock %} 
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h2 class="mb-0">Welcome, {{ current_user.name }}!</h2>
+                    <p class="mb-0">Category: {{ current_user.category or 'N/A' }}</p>
+                    <p class="mb-0">Email: {{ current_user.email }}</p>
+                    <p class="mb-0">NIN: {{ current_user.nin }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('admin.users') }}" class="btn btn-primary">
+                            <i class="bi bi-people"></i> Manage Users
+                        </a>
+                        <a href="{{ url_for('admin.register_business') }}" class="btn btn-success">
+                            <i class="bi bi-building-add"></i> Register Business
+                        </a>
+                        <a href="{{ url_for('admin.register_vehicle') }}" class="btn btn-warning">
+                            <i class="bi bi-truck"></i> Register Vehicle
+                        </a>
+                        <a href="{{ url_for('admin.payments') }}" class="btn btn-info">
+                            <i class="bi bi-credit-card"></i> View Payments
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">Enforcement Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('enforcement.dashboard') }}" class="btn btn-danger">
+                            <i class="bi bi-shield-check"></i> Enforcement Dashboard
+                        </a>
+                        <a href="{{ url_for('enforcement.scanner') }}" class="btn btn-danger">
+                            <i class="bi bi-qr-code-scan"></i> QR Scanner
+                        </a>
+                        <a href="{{ url_for('enforcement.verify') }}" class="btn btn-danger">
+                            <i class="bi bi-search"></i> Verify Payment
+                        </a>
+                        <a href="{{ url_for('enforcement.violations') }}" class="btn btn-danger">
+                            <i class="bi bi-exclamation-triangle"></i> View Violations
+                        </a>
+                        <a href="{{ url_for('enforcement.suspended_users') }}" class="btn btn-danger">
+                            <i class="bi bi-person-x"></i> Suspended Users
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">System Stats</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Total Users:</strong> {{ total_users|default(0) }}</p>
+                    <p><strong>Total Businesses:</strong> {{ total_businesses|default(0) }}</p>
+                    <p><strong>Total Vehicles:</strong> {{ total_vehicles|default(0) }}</p>
+                    <p><strong>Total Payments:</strong> {{ total_payments|default(0) }}</p>
+                    <p><strong>Suspended Users:</strong> {{ suspended_users|default(0) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">Recent Users</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for user in recent_users %}
+                        <a href="{{ url_for('admin.view_user', user_id=user.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ user.name }}</strong>
+                                <span class="badge bg-{{ 'success' if user.status == 'active' else 'danger' }}">{{ user.status }}</span>
+                            </div>
+                            <small class="text-muted">{{ user.role }} | NIN: {{ user.nin }}</small>
+                        </a>
+                        {% else %}
+                        <p class="text-muted">No recent users</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Recent Payments</h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for payment in recent_payments %}
+                        <a href="{{ url_for('admin.view_payment', payment_id=payment.id) }}" class="list-group-item list-group-item-action">
+                            <div class="d-flex justify-content-between">
+                                <strong>{{ payment.receipt_number }}</strong>
+                                <span class="text-success">₦{{ "{:,.2f}".format(payment.amount) }}</span>
+                            </div>
+                            <small class="text-muted">{{ payment.payer.name }} | {{ payment.payment_date.strftime('%Y-%m-%d') if payment.payment_date else 'Pending' }}</small>
+                        </a>
+                        {% else %}
+                        <p class="text-muted">No recent payments</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

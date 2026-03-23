@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-receipt"></i> Payment Verification
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if payment %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle-fill"></i> Payment found successfully!
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Receipt Number:</strong></p>
+                            <p><code>{{ payment.receipt_number }}</code></p>
+                            
+                            <p><strong>Payment Reference:</strong></p>
+                            <p>{{ payment.payment_reference }}</p>
+                            
+                            <p><strong>Amount:</strong></p>
+                            <h3 class="text-success">₦{{ "{:,.2f}".format(payment.amount) }}</h3>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Payer:</strong></p>
+                            <p>
+                                {% if payment.payer %}
+                                    {{ payment.payer.name }}
+                                    <br><small class="text-muted">NIN: {{ payment.payer.nin }}</small>
+                                {% else %}
+                                    Unknown
+                                {% endif %}
+                            </p>
+                            
+                            <p><strong>Payment Date:</strong></p>
+                            <p>{{ payment.payment_date.strftime('%Y-%m-%d %H:%M:%S') if payment.payment_date else 'N/A' }}</p>
+                            
+                            <p><strong>Status:</strong></p>
+                            <p>
+                                {% if payment.payment_status == 'success' %}
+                                    <span class="badge bg-success">Successful</span>
+                                {% elif payment.payment_status == 'pending' %}
+                                    <span class="badge bg-warning">Pending</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Failed</span>
+                                {% endif %}
+                                
+                                {% if payment.verification_status == 'verified' %}
+                                    <span class="badge bg-info">Verified</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Unverified</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if payment.business %}
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-building"></i> <strong>Business:</strong> {{ payment.business.business_name }}
+                        <br><small>Registration: {{ payment.business.registration_number }}</small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if payment.vehicle %}
+                    <div class="alert alert-info mt-3">
+                        <i class="bi bi-truck"></i> <strong>Vehicle:</strong> {{ payment.vehicle.plate_number }}
+                        <br><small>Type: {{ payment.vehicle.vehicle_type.name if payment.vehicle.vehicle_type else 'N/A' }}</small>
+                    </div>
+                    {% endif %}
+                    
+                    {% if payment.receipt and payment.receipt.qr_code %}
+                    <div class="text-center mt-4">
+                        <p><strong>QR Code:</strong></p>
+                        <img src="{{ url_for('static', filename='uploads/qrcodes/' + payment.receipt.qr_code) }}" 
+                             style="max-width: 200px;" class="img-fluid">
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <a href="{{ url_for('enforcement.verify') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Search
+                        </a>
+                        
+                        {% if payment.payment_status == 'success' and payment.verification_status != 'verified' %}
+                        <form method="POST" action="{{ url_for('enforcement.verify_payment', payment_id=payment.id) }}" 
+                              style="display: inline-block;">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Verify Payment
+                            </button>
+                        </form>
+                        {% endif %}
+                        
+                        <button onclick="window.print()" class="btn btn-info float-end">
+                            <i class="bi bi-printer"></i> Print
+                        </button>
+                    </div>
+                    
+                    {% else %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Payment not found!
+                    </div>
+                    <a href="{{ url_for('enforcement.verify') }}" class="btn btn-primary">
+                        <i class="bi bi-search"></i> Search Again
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+@media print {
+    .sidebar, .navbar-top, .btn, .card-header {
+        display: none !important;
+    }
+    .card {
+        border: none !important;
+    }
+    .content {
+        padding: 0 !important;
+    }
+}
+</style>
+{% endblock %}

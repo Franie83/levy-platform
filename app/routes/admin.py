@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_required, current_user 
 from app import db 
 from app.models import User, Business, Vehicle, Payment, AuditLog, VehicleType, BusinessType, IndustrySector
+from app.utils.qr_utils import generate_user_qr_code, generate_all_user_qr_codes  # ADD THIS IMPORT
 import os
 import uuid
 from datetime import datetime, timedelta
@@ -18,6 +19,48 @@ def dashboard():
         return redirect(url_for('main.dashboard')) 
     return render_template('admin/dashboard.html') 
  
+# ==================== QR CODE MANAGEMENT ====================
+@bp.route('/generate-user-qrcodes')
+@login_required
+def generate_user_qrcodes():
+    """Generate QR codes for all payee users"""
+    if current_user.role != 'super_admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    try:
+        count = generate_all_user_qr_codes()
+        flash(f'Successfully generated QR codes for {count} users!', 'success')
+    except Exception as e:
+        flash(f'Error generating QR codes: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin.users'))
+
+@bp.route('/generate-user-qrcode/<int:user_id>')
+@login_required
+def generate_single_user_qrcode(user_id):
+    """Generate QR code for a specific user"""
+    if current_user.role != 'super_admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    user = User.query.get_or_404(user_id)
+    
+    if user.role != 'payee':
+        flash('QR codes can only be generated for payee users.', 'warning')
+        return redirect(url_for('admin.view_user', user_id=user.id))
+    
+    try:
+        result = generate_user_qr_code(user)
+        if result:
+            flash(f'QR code generated successfully for {user.name}!', 'success')
+        else:
+            flash(f'Failed to generate QR code for {user.name}.', 'danger')
+    except Exception as e:
+        flash(f'Error generating QR code: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin.view_user', user_id=user.id))
+
 # ==================== USER MANAGEMENT WITH SEARCH ==================== 
 @bp.route('/users') 
 @login_required 
@@ -697,6 +740,7 @@ def payments():
     payments = query.order_by(Payment.created_at.desc()).all()
     
     return render_template('admin/payments.html', payments=payments) 
+
 # ==================== EDIT BUSINESS ====================
 @bp.route('/business/<int:business_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -834,7 +878,52 @@ def view_payment(payment_id):
     
     payment = Payment.query.get_or_404(payment_id)
     return render_template('admin/view_payment.html', payment=payment)
- 
+@bp.route('/generate-vehicle-qr/<int:vehicle_id>')
+@login_required
+def generate_vehicle_qr(vehicle_id):
+    """Generate QR code for a specific vehicle"""
+    if current_user.role != 'super_admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    vehicle = Vehicle.query.get_or_404(vehicle_id)
+    
+    from app.utils.qr_utils import generate_vehicle_qr_code
+    result = generate_vehicle_qr_code(vehicle)
+    
+    if result:
+        flash(f'QR code generated for vehicle {vehicle.plate_number}!', 'success')
+    else:
+        flash(f'Failed to generate QR code for vehicle {vehicle.plate_number}.', 'danger')
+    
+    return redirect(url_for('admin.vehicles'))
+
+@bp.route('/generate-all-business-qrs')
+@login_required
+def generate_all_business_qrs():
+    """Generate QR codes for all businesses"""
+    if current_user.role != 'super_admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    from app.utils.qr_utils import generate_all_business_qr_codes
+    count = generate_all_business_qr_codes()
+    
+    flash(f'Generated QR codes for {count} businesses!', 'success')
+    return redirect(url_for('admin.businesses'))
+@bp.route('/generate-all-vehicle-qrs')
+@login_required
+def generate_all_vehicle_qrs():
+    """Generate QR codes for all vehicles"""
+    if current_user.role != 'super_admin':
+        flash('Access denied. Admin only.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    from app.utils.qr_utils import generate_all_vehicle_qr_codes
+    count = generate_all_vehicle_qr_codes()
+    
+    flash(f'Generated QR codes for {count} vehicles!', 'success')
+    return redirect(url_for('admin.vehicles')) 
 # ==================== REPORTS ==================== 
 @bp.route('/reports') 
 @login_required 

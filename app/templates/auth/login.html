@@ -1,33 +1,130 @@
-{% extends "base.html" %} 
- 
-{% block auth_content %} 
-<div class="container mt-5"> 
-    <div class="row justify-content-center"> 
-        <div class="col-md-6"> 
-            <div class="card"> 
-                <div class="card-header bg-primary text-white"> 
-                    <h4 class="mb-0">Login</h4> 
-                </div> 
-                <div class="card-body"> 
-                    <form method="POST" action="{{ url_for('auth.login') }}"> 
-                        <div class="mb-3"> 
-                            <label for="nin" class="form-label">NIN (National ID Number)</label> 
-                            <input type="text" class="form-control" id="nin" name="nin" value="12345678901" required> 
-                        </div> 
-                        <div class="mb-3"> 
-                            <label for="password" class="form-label">Password</label> 
-                            <input type="password" class="form-control" id="password" name="password" value="password123" required> 
-                        </div> 
-                        <div class="mb-3 form-check"> 
-                            <input type="checkbox" class="form-check-input" id="remember" name="remember"> 
-                            <label class="form-check-label" for="remember">Remember Me</label> 
-                        </div> 
-                        <button type="submit" class="btn btn-primary">Login</button> 
-                        <a href="{{ url_for('auth.register') }}" class="btn btn-link">Don't have an account? Register</a> 
-                    </form> 
-                </div> 
-            </div> 
-        </div> 
-    </div> 
-</div> 
-{% endblock %} 
+{% extends "base.html" %}
+
+{% block auth_content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="mb-0">
+                        <i class="bi bi-shield-lock"></i> Levy Management Platform
+                    </h3>
+                    <small>Login to your account</small>
+                </div>
+                <div class="card-body">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {% if category == 'danger' %}
+                                        <i class="bi bi-exclamation-triangle-fill"></i>
+                                    {% elif category == 'success' %}
+                                        <i class="bi bi-check-circle-fill"></i>
+                                    {% elif category == 'warning' %}
+                                        <i class="bi bi-exclamation-circle-fill"></i>
+                                    {% else %}
+                                        <i class="bi bi-info-circle-fill"></i>
+                                    {% endif %}
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="nin" class="form-label">National Identification Number (NIN)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-credit-card"></i>
+                                </span>
+                                <input type="text" class="form-control" id="nin" name="nin" 
+                                       placeholder="Enter your 11-digit NIN" required
+                                       pattern="[0-9]{11}" maxlength="11">
+                            </div>
+                            <small class="text-muted">Enter your 11-digit NIN number</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-key"></i>
+                                </span>
+                                <input type="password" class="form-control" id="password" name="password" 
+                                       placeholder="Enter your password" required>
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+                                    <i class="bi bi-eye" id="toggleIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                            <label class="form-check-label" for="remember">Remember me</label>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-box-arrow-in-right"></i> Login
+                        </button>
+                    </form>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <p class="text-muted mb-0">
+                            <small>
+                                <i class="bi bi-info-circle"></i> 
+                                Need help? Contact support at support@levyplatform.com
+                            </small>
+                        </p>
+                    </div>
+                </div>
+                <div class="card-footer text-center text-muted">
+                    <small>© 2024 Levy Management Platform. All rights reserved.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword() {
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        toggleIcon.classList.remove('bi-eye');
+        toggleIcon.classList.add('bi-eye-slash');
+    } else {
+        passwordInput.type = 'password';
+        toggleIcon.classList.remove('bi-eye-slash');
+        toggleIcon.classList.add('bi-eye');
+    }
+}
+
+// Auto-format NIN input
+document.getElementById('nin').addEventListener('input', function(e) {
+    this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);
+});
+</script>
+
+<style>
+.card {
+    border-radius: 15px;
+    overflow: hidden;
+}
+.card-header {
+    padding: 30px 20px;
+}
+.btn-primary {
+    padding: 10px;
+    font-weight: bold;
+}
+.alert {
+    border-radius: 10px;
+}
+</style>
+{% endblock %}

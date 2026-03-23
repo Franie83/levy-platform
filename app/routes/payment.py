@@ -1,4 +1,4 @@
-# app/routes/payment.py (updated with simulation)
+# app/routes/payment.py (updated with simulation and fixed API)
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, current_app
 from flask_login import login_required, current_user
@@ -57,7 +57,7 @@ def pay():
             # Use entity type amount
             if entity_type == 'business':
                 business = Business.query.get(entity_id)
-                if business and business.business_type_ref:
+                if business and business.business_type_ref:  # Changed from business_type to business_type_ref
                     amount = business.business_type_ref.amount
                     levy_display = f"{business.business_type_ref.name} (Default)"
                 else:
@@ -65,7 +65,7 @@ def pay():
                     return redirect(url_for('payment.pay'))
             elif entity_type == 'vehicle':
                 vehicle = Vehicle.query.get(entity_id)
-                if vehicle and vehicle.vehicle_type_ref:
+                if vehicle and vehicle.vehicle_type_ref:  # Changed from vehicle_type to vehicle_type_ref
                     amount = vehicle.vehicle_type_ref.amount
                     levy_display = f"{vehicle.vehicle_type_ref.name} (Default)"
                 else:
@@ -276,6 +276,109 @@ def verify(receipt_number):
     
     return render_template('payment/verify.html', payment=payment)
 
+@bp.route('/api/receipt/<receipt_number>')
+@login_required
+def api_receipt(receipt_number):
+    """API endpoint to get receipt data as JSON"""
+    try:
+        payment = Payment.query.filter_by(receipt_number=receipt_number).first()
+        
+        if not payment:
+            return jsonify({
+                'success': False,
+                'message': 'Receipt not found'
+            }), 404
+        
+        # Check permission
+        if current_user.role not in ['super_admin', 'enforcer'] and payment.user_id != current_user.id:
+            return jsonify({
+                'success': False,
+                'message': 'Access denied'
+            }), 403
+        
+        # Get business data
+        business_data = None
+        if payment.business_id:
+            business = Business.query.get(payment.business_id)
+            if business:
+                business_data = {
+                    'id': business.id,
+                    'business_name': business.business_name,
+                    'registration_number': business.registration_number,
+                    'tin': getattr(business, 'tin', 'N/A'),
+                    'address': getattr(business, 'address', 'N/A')
+                }
+                # Add business type if available
+                if hasattr(business, 'business_type') and business.business_type:
+                    business_data['business_type'] = business.business_type.name
+                else:
+                    business_data['business_type'] = 'N/A'
+        
+        # Get vehicle data - using vehicle_id field
+        vehicle_data = None
+        if hasattr(payment, 'vehicle_id') and payment.vehicle_id:
+            vehicle = Vehicle.query.get(payment.vehicle_id)
+            if vehicle:
+                vehicle_data = {
+                    'id': vehicle.id,
+                    'plate_number': vehicle.plate_number,
+                    'brand': getattr(vehicle, 'brand', 'N/A'),
+                    'model': getattr(vehicle, 'model', 'N/A'),
+                    'year_of_manufacture': getattr(vehicle, 'year_of_manufacture', None),
+                    'color': getattr(vehicle, 'color', 'N/A')
+                }
+                # Add vehicle type if available
+                if hasattr(vehicle, 'vehicle_type') and vehicle.vehicle_type:
+                    vehicle_data['vehicle_type'] = vehicle.vehicle_type.name
+                else:
+                    vehicle_data['vehicle_type'] = 'N/A'
+        
+        # Get payer data
+        payer_data = None
+        if payment.user_id:
+            user = User.query.get(payment.user_id)
+            if user:
+                payer_data = {
+                    'id': user.id,
+                    'name': user.name,
+                    'nin': user.nin,
+                    'email': user.email,
+                    'phone': user.phone,
+                    'category': getattr(user, 'category', 'N/A')
+                }
+        
+        # Prepare receipt data
+        receipt_data = {
+            'success': True,
+            'receipt': {
+                'id': payment.id,
+                'receipt_number': payment.receipt_number,
+                'payment_reference': payment.payment_reference,
+                'amount': float(payment.amount) if payment.amount else 0,
+                'payment_date': payment.payment_date.isoformat() if payment.payment_date else None,
+                'payment_status': payment.payment_status,
+                'verification_status': payment.verification_status,
+                'payer': payer_data,
+                'business': business_data,
+                'vehicle': vehicle_data
+            }
+        }
+        
+        # Add QR code if exists
+        if hasattr(payment, 'receipt') and payment.receipt:
+            if hasattr(payment.receipt, 'qr_code') and payment.receipt.qr_code:
+                receipt_data['receipt']['qr_code'] = url_for('static', filename=f'uploads/qrcodes/{payment.receipt.qr_code}')
+        
+        return jsonify(receipt_data)
+        
+    except Exception as e:
+        print(f"Error in api_receipt: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'message': f'Error loading receipt: {str(e)}'
+        }), 500
 @bp.route('/receipt/<payment_reference>')
 @login_required
 def receipt(payment_reference):
@@ -291,34 +394,56 @@ def receipt(payment_reference):
 
 def generate_receipt(payment):
     """Generate a receipt for a successful payment"""
-    from flask import url_for, current_app
-    import qrcode
-    import os
-    
-    # Create receipt record if not exists
-    receipt = Receipt.query.filter_by(payment_id=payment.id).first()
-    if not receipt:
-        receipt = Receipt(
-            payment_id=payment.id,
-            receipt_number=payment.receipt_number
-        )
-        
-        # Generate QR code
-        qr = qrcode.QRCode(version=1, box_size=10, border=5)
-        qr.add_data(f"{url_for('payment.verify', receipt_number=payment.receipt_number, _external=True)}")
-        qr.make(fit=True)
-        
-        img = qr.make_image(fill_color="black", back_color="white")
-        
-        # Save QR code - use current_app instead of app
-        qr_filename = f"qr_{payment.receipt_number}.png"
-        qr_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'qrcodes', qr_filename)
-        os.makedirs(os.path.dirname(qr_path), exist_ok=True)
-        img.save(qr_path)
-        
-        receipt.qr_code = qr_filename
-        
-        db.session.add(receipt)
-        db.session.commit()
+    try:
+        # Create receipt record if not exists
+        receipt = Receipt.query.filter_by(payment_id=payment.id).first()
+        if not receipt:
+            receipt = Receipt(
+                payment_id=payment.id,
+                receipt_number=payment.receipt_number
+            )
+            
+            # Generate QR code
+            qr = qrcode.QRCode(version=1, box_size=10, border=5)
+            qr.add_data(f"{url_for('payment.verify', receipt_number=payment.receipt_number, _external=True)}")
+            qr.make(fit=True)
+            
+            img = qr.make_image(fill_color="black", back_color="white")
+            
+            # Save QR code
+            qr_filename = f"qr_{payment.receipt_number}.png"
+            qr_path = os.path.join(current_app.config['UPLOAD_FOLDER'], 'qrcodes', qr_filename)
+            os.makedirs(os.path.dirname(qr_path), exist_ok=True)
+            img.save(qr_path)
+            
+            receipt.qr_code = qr_filename
+            
+            db.session.add(receipt)
+            db.session.commit()
+    except Exception as e:
+        print(f"Error generating receipt: {e}")
+        db.session.rollback()
     
     return receipt
+
+@bp.route('/api/receipts/<int:user_id>')
+@login_required
+def api_user_receipts(user_id):
+    """API endpoint to get all receipts for a user"""
+    if current_user.role not in ['super_admin', 'enforcer'] and current_user.id != user_id:
+        return jsonify({'error': 'Access denied'}), 403
+    
+    payments = Payment.query.filter_by(user_id=user_id, payment_status='success').order_by(Payment.payment_date.desc()).all()
+    
+    receipts = []
+    for payment in payments:
+        receipts.append({
+            'receipt_number': payment.receipt_number,
+            'amount': float(payment.amount),
+            'payment_date': payment.payment_date.isoformat() if payment.payment_date else None,
+            'verification_status': payment.verification_status,
+            'entity_type': 'business' if payment.business else 'vehicle' if payment.vehicle else None,
+            'entity_name': payment.business.business_name if payment.business else (payment.vehicle.plate_number if payment.vehicle else None)
+        })
+    
+    return jsonify({'success': True, 'receipts': receipts})
