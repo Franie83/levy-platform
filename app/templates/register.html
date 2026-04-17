@@ -1,0 +1,89 @@
+{% extends "base.html" %} 
+ 
+{% block auth_content %} 
+<div class="container mt-4"> 
+    <div class="row justify-content-center"> 
+        <div class="col-md-8"> 
+            <div class="card"> 
+                <div class="card-header bg-primary text-white"> 
+                    <h4 class="mb-0">Register New Account</h4> 
+                </div> 
+                <div class="card-body"> 
+                    <form method="POST" action="{{ url_for('register') }}"> 
+                        <div class="row"> 
+                            <div class="col-md-6 mb-3"> 
+                                <label for="name" class="form-label">Full Name *</label> 
+                                <input type="text" class="form-control" id="name" name="name" required> 
+                            </div> 
+                            <div class="col-md-6 mb-3"> 
+                                <label for="email" class="form-label">Email Address *</label> 
+                                <input type="email" class="form-control" id="email" name="email" required> 
+                            </div> 
+                        </div> 
+                        <div class="row"> 
+                            <div class="col-md-6 mb-3"> 
+                                <label for="phone" class="form-label">Phone Number *</label> 
+                                <input type="tel" class="form-control" id="phone" name="phone" required> 
+                            </div> 
+                            <div class="col-md-6 mb-3"> 
+                                <label for="nin" class="form-label">NIN (National ID Number) *</label> 
+                                <input type="text" class="form-control" id="nin" name="nin" required> 
+                            </div> 
+                        </div> 
+                        <div class="row"> 
+                            <div class="col-md-6 mb-3"> 
+                                <label for="password" class="form-label">Password *</label> 
+                                <input type="password" class="form-control" id="password" name="password" required> 
+                            </div> 
+                            <div class="col-md-6 mb-3"> 
+                                <label for="confirm_password" class="form-label">Confirm Password *</label> 
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required> 
+                            </div> 
+                        </div> 
+                        <div class="row"> 
+                            <div class="col-md-6 mb-3"> 
+                                <label for="role" class="form-label">Role *</label> 
+                                <select class="form-control" id="role" name="role" required onchange="toggleCategory()"> 
+                                    <option value="">Select Role</option> 
+                                    <option value="payee">Payee (Business/Vehicle Owner)</option> 
+                                    <option value="enforcer">Enforcer</option> 
+                                    <option value="super_admin">Super Admin</option> 
+                                </select> 
+                            </div> 
+                            <div class="col-md-6 mb-3" id="category_div" style="display: none;"> 
+                                <label for="category" class="form-label">Category *</label> 
+                                <select class="form-control" id="category" name="category"> 
+                                    <option value="">Select Category</option> 
+                                    <option value="MSME">MSME (Business Owner)</option> 
+                                    <option value="Transporter">Transporter (Vehicle Owner)</option> 
+                                </select> 
+                            </div> 
+                        </div> 
+                        <button type="submit" class="btn btn-primary">Register</button> 
+                        <a href="{{ url_for('login') }}" class="btn btn-link">Already have an account? Login</a> 
+                    </form> 
+                </div> 
+            </div> 
+        </div> 
+    </div> 
+</div> 
+ 
+<script> 
+function toggleCategory() { 
+    var role = document.getElementById('role').value; 
+    var categoryDiv = document.getElementById('category_div'); 
+    var categorySelect = document.getElementById('category'); 
+    if (role === 'payee') { 
+        categoryDiv.style.display = 'block'; 
+        categorySelect.required = true; 
+    } else { 
+        categoryDiv.style.display = 'none'; 
+        categorySelect.required = false; 
+        categorySelect.value = ''; 
+    } 
+} 
+document.addEventListener('DOMContentLoaded', function() { 
+    toggleCategory(); 
+}); 
+</script> 
+{% endblock %} 
